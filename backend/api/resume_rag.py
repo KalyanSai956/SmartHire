@@ -7,6 +7,9 @@ from fastapi import (
     Query,
     Request,
 )
+from backend.api.dependencies import (
+    resume_search_rate_limit,
+)
 
 from backend.api.auth import (
     get_current_user,
@@ -70,8 +73,8 @@ async def resume_rag_search(
         le=20,
     ),
     user_id: str = Depends(
-        get_current_user
-    ),
+    resume_search_rate_limit
+),
 ):
     """
     Semantic search against the user's

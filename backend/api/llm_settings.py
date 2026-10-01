@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-
+from backend.api.dependencies import (
+    llm_connect_rate_limit,
+)
 from backend.api.auth import get_current_user
 from backend.database.supabase_db import (
     delete_user_llm_credential,
@@ -112,7 +114,9 @@ async def get_llm_settings(
 @router.post("/connect")
 async def connect_llm_provider(
     payload: ConnectProviderRequest,
-    user_id: str = Depends(get_current_user),
+    user_id: str = Depends(
+    llm_connect_rate_limit
+),
 ):
     provider = normalize_provider(payload.provider)
 

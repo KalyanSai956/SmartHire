@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 from uuid import UUID
-
-import httpx
 from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
     Query,
+    Request,
+)
+import httpx
+from backend.core.config import (
+    COMPANY_CACHE_TTL_SECONDS,
+    JOB_CACHE_TTL_SECONDS,
+)
+
+from backend.services.cache.cache_service import (
+    build_cache_key,
+    get_json,
+    set_json,
 )
 
 from backend.api.auth import (
@@ -81,8 +91,26 @@ async def _saved_ids(
     }
 
 
-async def _companies() -> list[dict]:
-    return await supabase_rest_get(
+async def _companies(
+    redis=None,
+) -> list[dict]:
+
+    cache_key = build_cache_key(
+        "companies:target",
+        {
+            "version": 1,
+        },
+    )
+
+    cached = await get_json(
+        redis,
+        cache_key,
+    )
+
+    if isinstance(cached, list):
+        return cached
+
+    companies = await supabase_rest_get(
         "companies",
         {
             "is_target_company": (
@@ -96,6 +124,15 @@ async def _companies() -> list[dict]:
             "limit": "100",
         },
     )
+
+    await set_json(
+        redis,
+        cache_key,
+        companies,
+        COMPANY_CACHE_TTL_SECONDS,
+    )
+
+    return companies
 
 
 def _sort_jobs(
@@ -398,6 +435,7 @@ async def _enrich_companies(
 
 @router.get("")
 async def list_jobs(
+    request: Request,
     page: int = Query(
         1,
         ge=1,
@@ -449,7 +487,11 @@ async def list_jobs(
         or page_size
         or 20
     )
-
+    redis = getattr(
+    request.app.state,
+    "redis",
+    None,
+)
     params = {
         "select": (
             "id,company_id,source_id,"
@@ -491,12 +533,41 @@ async def list_jobs(
             f"*"
         )
 
-    rows = await supabase_rest_get(
+    job_cache_key = build_cache_key(
+    "jobs:india:active",
+    {
+        "remote_type": remote_type,
+        "employment_type": employment_type,
+    },
+)
+
+    cached_rows = await get_json(
+    redis,
+    job_cache_key,
+)
+
+    if isinstance(
+        cached_rows,
+    list,
+):
+        rows = cached_rows
+
+    else:
+        rows = await supabase_rest_get(
         "jobs",
         params,
     )
 
-    companies = await _companies()
+    await set_json(
+        redis,
+        job_cache_key,
+        rows,
+        JOB_CACHE_TTL_SECONDS,
+    )
+
+    companies = await _companies(
+    redis
+)
 
     jobs = await _enrich_companies(
         rows,
@@ -770,21 +841,57 @@ async def unsave_job(
     }
 
 
-@router.get(
-    "/{job_id}"
-)
+@router.get("/{job_id}")
 async def get_job(
+    request: Request,
     job_id: UUID,
     user_id: str = Depends(
         get_current_user
     ),
 ):
+    redis = getattr(
+        request.app.state,
+        "redis",
+        None,
+    )
+
+    cache_key = build_cache_key(
+        "job",
+        {
+            "job_id": str(job_id),
+        },
+    )
+
+    cached_job = await get_json(
+        redis,
+        cache_key,
+    )
+
+    # --------------------------------------------------------
+    # Redis HIT
+    # --------------------------------------------------------
+
+    if isinstance(cached_job, dict):
+
+        saved = await _saved_ids(
+            user_id
+        )
+
+        return {
+            **cached_job,
+            "is_saved": (
+                str(job_id) in saved
+            ),
+        }
+
+    # --------------------------------------------------------
+    # Redis MISS
+    # --------------------------------------------------------
+
     rows = await supabase_rest_get(
         "jobs",
         {
-            "id": (
-                f"eq.{job_id}"
-            ),
+            "id": f"eq.{job_id}",
             "select": "*",
             "limit": "1",
         },
@@ -796,12 +903,29 @@ async def get_job(
             "Job not found",
         )
 
-    companies = await _companies()
+    companies = await _companies(
+        redis
+    )
 
     jobs = await _enrich_companies(
         rows,
         companies,
     )
+
+    # --------------------------------------------------------
+    # Cache job data WITHOUT user-specific is_saved
+    # --------------------------------------------------------
+
+    await set_json(
+        redis,
+        cache_key,
+        jobs[0],
+        JOB_CACHE_TTL_SECONDS,
+    )
+
+    # --------------------------------------------------------
+    # User-specific saved state
+    # --------------------------------------------------------
 
     saved = await _saved_ids(
         user_id
@@ -810,7 +934,6 @@ async def get_job(
     return {
         **jobs[0],
         "is_saved": (
-            str(job_id)
-            in saved
+            str(job_id) in saved
         ),
     }

@@ -12,6 +12,9 @@ from backend.services.llm.quota import (
     FreeQuotaExceededError,
     require_free_quota,
 )
+from backend.api.dependencies import (
+    profile_resume_rate_limit,
+)
 logger = logging.getLogger("ats_resume_scorer")
 
 router = APIRouter(
@@ -289,7 +292,9 @@ async def upload_profile_resume(
         ...,
         description="Resume file — PDF or DOCX, max 5 MB",
     ),
-    user_id: str = Depends(get_current_user),
+    user_id: str = Depends(
+    profile_resume_rate_limit
+),
 ):
     """
     Parse and save the user's latest resume.

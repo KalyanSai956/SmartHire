@@ -16,6 +16,11 @@ from backend.services.llm.quota import (
     require_free_quota_or_byok,
 )
 from backend.api.auth import get_current_user
+from backend.api.dependencies import (
+    history_pdf_rate_limit,
+    pdf_rate_limit,
+    resume_analysis_rate_limit,
+)
 
 from backend.models.schemas import (
     AnalysisResponse,
@@ -73,7 +78,9 @@ async def analyze_resume(
     "",
     description="Optional LLM provider override.",
 ),
-    user_id: str = Depends(get_current_user),
+    user_id: str = Depends(
+    resume_analysis_rate_limit
+),
 ):
       # ============================================================
     # PHASE 7B — FREE RESUME ANALYSIS QUOTA
@@ -122,7 +129,6 @@ async def analyze_resume(
             ),
         ) from exc
 
-    warnings: List[str] = []
     warnings: List[str] = []
 
     nlp = request.app.state.nlp
@@ -747,7 +753,9 @@ async def delete_history_entry(
 @router.post("/generate-pdf")
 async def generate_pdf(
     data: AnalysisResponse,
-    user_id: str = Depends(get_current_user),
+    user_id: str = Depends(
+    pdf_rate_limit
+),
 ):
 
     from backend.services.report_generator import (
@@ -795,7 +803,9 @@ async def generate_pdf(
 @router.get("/history/{analysis_id}/pdf")
 async def generate_history_pdf(
     analysis_id: str,
-    user_id: str = Depends(get_current_user),
+    user_id: str = Depends(
+    history_pdf_rate_limit
+),
 ):
 
     from backend.database.supabase_db import (
