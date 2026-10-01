@@ -93,7 +93,7 @@
 
   margin-bottom: 4px;
 
-  font-size: 15px;
+  font-size: 10px;
   font-weight: 700;
 
   letter-spacing: 0.13em;
@@ -104,7 +104,7 @@
 .career-insights-header h3 {
   margin: 0;
 
-  font-size: 25px;
+  font-size: 12px;
   font-weight: 700;
 
   letter-spacing: -0.01em;
@@ -194,7 +194,7 @@
 .career-insights-divider {
   height: 1px;
 
-  margin: 19px 0;
+  margin: 15px 0;
 
   background: #edf0f4;
 }
@@ -249,7 +249,7 @@
 .insight-card span {
   display: block;
 
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 700;
 
   letter-spacing: 0.1em;
@@ -303,7 +303,7 @@
 .career-sidebar-header h3 {
   margin: 0;
 
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 700;
 
   letter-spacing: -0.01em;
@@ -514,7 +514,7 @@
 .workspace-panel-heading h3 {
   margin: 2px 0 0;
 
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
 
   color: #172033;
@@ -629,7 +629,7 @@
 
 .career-sidebar-header h3 {
   margin: 0;
-  font-size: 22px;
+  font-size: 15px;
   font-weight: 700;
   color: #172033;
 }
@@ -652,7 +652,7 @@
 
 .career-target-card strong {
   display: block;
-  font-size: 16px;
+  font-size: 12px;
   font-weight: 700;
   color: #002a9d;
 }
@@ -741,9 +741,9 @@
   gap: 14px;
 
   width: 100%;
-  min-height: 68px;
+  min-height: 30px;
 
-  padding: 12px 14px;
+  padding: 5px 10px;
 
   border: 1px solid rgba(0, 42, 157, 0.10);
   border-radius: 14px;
@@ -804,7 +804,7 @@
 
 .ai-setup-banner-content span {
   display: block;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1.45;
   color: #334155;
@@ -821,7 +821,7 @@
 
   flex-shrink: 0;
 
-  min-height: 38px;
+  min-height: 36px;
   padding: 0 14px;
 
   border: 0;
@@ -944,4 +944,131 @@
     width: 28px;
     height: 28px;
   }
+}
+.career-insights-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.career-insight-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  width: 100%;
+  min-height: 40px;
+
+  padding: 8px 10px;
+
+  border: 1px solid transparent;
+  border-radius: 9px;
+
+  text-decoration: none;
+
+  background: transparent;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.career-insight-link:hover {
+  background: #f8fafc;
+  border-color: #edf0f4;
+  transform: translateX(1px);
+}
+
+.career-insight-link.active {
+  background: rgba(0, 42, 157, 0.055);
+  border-color: rgba(0, 42, 157, 0.12);
+}
+
+.career-insight-icon {
+  flex-shrink: 0;
+  color: #64748b;
+  transition: color 0.18s ease;
+}
+
+.career-insight-link.active .career-insight-icon {
+  color: #002a9d;
+}
+
+.career-insight-link strong {
+  display: block;
+
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+
+  color: #334155;
+}
+
+.career-insight-link.active strong {
+  color: #002a9d;
+}
+/* =========================================
+   FULL-HEIGHT SIDEBARS (top to bottom)
+========================================= */
+
+.career-insights,
+.career-sidebar {
+  position: fixed;
+  top: 64px;      /* directly under the 64px navbar; use 0 if there's no navbar */
+  bottom: 0;      /* sticks to the bottom of the viewport */
+  height: auto;
+
+  width: 260px;
+  padding: 24px 20px;
+
+  border-radius: 0;
+  overflow-y: auto;      /* scrolls internally if content is taller than the screen */
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+}
+
+/* Left sidebar: flush to the left edge */
+.career-insights {
+  left: 0;
+  right: auto;
+  border-left: 0;
+  border-top: 0;
+  border-bottom: 0;
+}
+
+/* Right sidebar: flush to the right edge */
+.career-sidebar {
+  right: 0;
+  left: auto;
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 0;
+}
+
+/* Keep the center content clear of the wider sidebars */
+.workspace-main {
+  width: min(calc(100% - 600px), 980px);
+}
+
+/* Responsive widths (same breakpoints as before) */
+@media (max-width: 1350px) {
+  .career-insights,
+  .career-sidebar { width: 230px; }
+
+  .workspace-main { width: min(calc(100% - 520px), 950px); }
+}
+
+@media (max-width: 1150px) {
+  .career-insights,
+  .career-sidebar { width: 210px; }
+
+  .workspace-main { width: min(calc(100% - 480px), 900px); }
+}
+
+@media (max-width: 1050px) {
+  .career-insights,
+  .career-sidebar { display: none; }
+
+  .workspace-main { width: 100%; }
 }

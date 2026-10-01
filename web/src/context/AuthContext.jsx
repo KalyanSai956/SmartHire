@@ -9,9 +9,45 @@ export const supabase =
 
 const AuthContext = createContext(null);
 
+const SESSION_DURATION = 6 * 60 * 60 * 1000;
+const SESSION_EXPIRY_KEY = "smarthire_session_expires_at";
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const clearSessionExpiry = () => {
+    localStorage.removeItem(SESSION_EXPIRY_KEY);
+  };
+
+  const setSessionExpiry = () => {
+    const expiresAt = Date.now() + SESSION_DURATION;
+    localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
+  };
+
+  const isSessionExpired = () => {
+    const expiresAt = Number(localStorage.getItem(SESSION_EXPIRY_KEY));
+
+    if (!expiresAt) {
+      return false;
+    }
+
+    return Date.now() >= expiresAt;
+  };
+
+  const forceSignOut = async () => {
+    clearSessionExpiry();
+
+    try {
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+    } catch (error) {
+      console.error("Automatic sign out error:", error);
+    }
+
+    setSession(null);
+  };
 
   useEffect(() => {
     if (!supabase) {
@@ -29,14 +65,39 @@ export function AuthProvider({ children }) {
 
         if (error) {
           console.error("Get session error:", error);
+          clearSessionExpiry();
           setSession(null);
-        } else {
-          setSession(data?.session ?? null);
+          return;
         }
+
+        const currentSession = data?.session ?? null;
+
+        if (!currentSession) {
+          clearSessionExpiry();
+          setSession(null);
+          return;
+        }
+
+        if (isSessionExpired()) {
+          await forceSignOut();
+
+          if (mounted) {
+            setSession(null);
+          }
+
+          return;
+        }
+
+        if (!localStorage.getItem(SESSION_EXPIRY_KEY)) {
+          setSessionExpiry();
+        }
+
+        setSession(currentSession);
       } catch (error) {
         console.error("Session loading error:", error);
 
         if (mounted) {
+          clearSessionExpiry();
           setSession(null);
         }
       } finally {
@@ -55,19 +116,49 @@ export function AuthProvider({ children }) {
 
       if (!mounted) return;
 
+      if (event === "SIGNED_OUT") {
+        clearSessionExpiry();
+        setSession(null);
+        setLoading(false);
+        return;
+      }
+
+      if (event === "SIGNED_IN") {
+        setSessionExpiry();
+      }
+
+      if (nextSession && isSessionExpired()) {
+        forceSignOut();
+        return;
+      }
+
       setSession(nextSession ?? null);
       setLoading(false);
     });
 
+    const interval = setInterval(async () => {
+      if (!mounted) return;
+
+      if (isSessionExpired()) {
+        await forceSignOut();
+      }
+    }, 60 * 1000);
+
+    const handleVisibilityChange = async () => {
+      if (!document.hidden && isSessionExpired()) {
+        await forceSignOut();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
-
-  // ============================================================
-  // SIGN IN
-  // ============================================================
 
   const signIn = async (email, password) => {
     if (!supabase) {
@@ -85,17 +176,18 @@ export function AuthProvider({ children }) {
       throw error;
     }
 
-    setSession(data?.session ?? null);
+    if (data?.session) {
+      setSessionExpiry();
+      setSession(data.session);
+    }
+
+    console.log("ACCESS TOKEN:", data?.session?.access_token);
 
     return {
       data,
       error: null,
     };
   };
-
-  // ============================================================
-  // SIGN UP
-  // ============================================================
 
   const signUp = async (email, password, fullName) => {
     if (!supabase) {
@@ -120,6 +212,7 @@ export function AuthProvider({ children }) {
     }
 
     if (data?.session) {
+      setSessionExpiry();
       setSession(data.session);
     }
 
@@ -129,20 +222,17 @@ export function AuthProvider({ children }) {
     };
   };
 
-  // ============================================================
-  // SIGN OUT
-  // ============================================================
-
   const signOut = async () => {
     if (!supabase) {
       throw new Error("SmartHire authentication is not configured.");
     }
 
+    clearSessionExpiry();
+
     const { error } = await supabase.auth.signOut();
 
     if (error) {
       console.error("Supabase sign out error:", error);
-
       throw error;
     }
 
@@ -158,7 +248,6 @@ export function AuthProvider({ children }) {
       accessToken: session?.access_token ?? null,
       loading,
       configured: Boolean(supabase),
-
       signIn,
       signUp,
       signOut,

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SmartHire ATS Action Items</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1f2937;
+            line-height: 1.5;
+        }
+
+        .header {
+            border-bottom: 3px solid #111827;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding-bottom: 7px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .item {
+            border: 1px solid #e5e7eb;
+            border-radius: 7px;
+            padding: 13px;
+            margin-bottom: 10px;
+            page-break-inside: avoid;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 7px;
+        }
+
+        .item-title {
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .severity {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 99px;
+            background: #f3f4f6;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .item p {
+            margin: 5px 0;
+            font-size: 12px;
+            color: #4b5563;
+        }
+
+        .empty {
+            color: #9ca3af;
+            font-size: 13px;
+            padding: 10px 0;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="brand">SmartHire ATS</div>
+    <div class="subtitle">
+        Resume Improvement Action Items · {{ timestamp | format_date }}
+    </div>
+</div>
+
+
+<div class="section">
+
+    <div class="section-title">
+        High Priority
+    </div>
+
+    {% if high_priority %}
+
+        {% for item in high_priority %}
+
+        <div class="item">
+
+            <div class="item-header">
+                <div class="item-title">
+                    {{ item.get('title') or item.get('category') or 'Improvement Required' }}
+                </div>
+
+                <div class="severity">
+                    High
+                </div>
+            </div>
+
+            {% if item.get('message') %}
+                <p>{{ item.get('message') }}</p>
+            {% elif item.get('description') %}
+                <p>{{ item.get('description') }}</p>
+            {% elif item.get('issue') %}
+                <p>{{ item.get('issue') }}</p>
+            {% endif %}
+
+            {% if item.get('suggestion') %}
+                <p><strong>Suggestion:</strong> {{ item.get('suggestion') }}</p>
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <div class="empty">
+            No high-priority issues identified.
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<div class="section">
+
+    <div class="section-title">
+        Medium Priority
+    </div>
+
+    {% if medium_priority %}
+
+        {% for item in medium_priority %}
+
+        <div class="item">
+
+            <div class="item-header">
+                <div class="item-title">
+                    {{ item.get('title') or item.get('category') or 'Improvement Recommended' }}
+                </div>
+
+                <div class="severity">
+                    Medium
+                </div>
+            </div>
+
+            {% if item.get('message') %}
+                <p>{{ item.get('message') }}</p>
+            {% elif item.get('description') %}
+                <p>{{ item.get('description') }}</p>
+            {% elif item.get('issue') %}
+                <p>{{ item.get('issue') }}</p>
+            {% endif %}
+
+            {% if item.get('suggestion') %}
+                <p><strong>Suggestion:</strong> {{ item.get('suggestion') }}</p>
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <div class="empty">
+            No medium-priority issues identified.
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<div class="section">
+
+    <div class="section-title">
+        Low Priority / Informational
+    </div>
+
+    {% if low_priority %}
+
+        {% for item in low_priority %}
+
+        <div class="item">
+
+            <div class="item-header">
+                <div class="item-title">
+                    {{ item.get('title') or item.get('category') or 'Additional Recommendation' }}
+                </div>
+
+                <div class="severity">
+                    Low
+                </div>
+            </div>
+
+            {% if item.get('message') %}
+                <p>{{ item.get('message') }}</p>
+            {% elif item.get('description') %}
+                <p>{{ item.get('description') }}</p>
+            {% elif item.get('issue') %}
+                <p>{{ item.get('issue') }}</p>
+            {% endif %}
+
+            {% if item.get('suggestion') %}
+                <p><strong>Suggestion:</strong> {{ item.get('suggestion') }}</p>
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <div class="empty">
+            No additional recommendations.
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<div class="footer">
+    Generated by SmartHire ATS · {{ timestamp | format_date }}
+</div>
+
+</body>
+</html>

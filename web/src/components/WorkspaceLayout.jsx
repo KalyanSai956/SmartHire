@@ -20,7 +20,7 @@ export default function WorkspaceLayout() {
 
         <main className="workspace-main">
           {showSetupBanner && (
-            <div className="ai-setup-banner">
+            <div className="mx-auto max-w-4xl px-1 py-2 ai-setup-banner">
               <div className="ai-setup-banner-icon">
                 <KeyRound size={18} />
               </div>

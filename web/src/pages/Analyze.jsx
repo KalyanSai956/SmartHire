@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, FileText, Sparkles, Target, Upload } from "lucide-react";
+import { CheckCircle2, Upload } from "lucide-react";
 import { analyzeResume } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import "../CSS/Analyze.css";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -50,9 +51,13 @@ export default function Analyze() {
     setBusy(true);
 
     try {
+      const activeProvider =
+        localStorage.getItem("smarthire_active_provider") || "";
+
       const result = await analyzeResume({
         file,
         jobDescription,
+        provider: activeProvider,
         token: accessToken,
       });
 
@@ -93,7 +98,7 @@ export default function Analyze() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-5 page-shell">
+    <div className="mx-auto max-w-7xl px-2 py-2 page-shell">
       <section className="center-heading">
         <p className="eyebrow">ANALYZE YOUR RESUME</p>
       </section>

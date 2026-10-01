@@ -1,5 +1,9 @@
 
 import logging
+import uuid
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,9 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.llm_settings import (
     router as llm_settings_router,
 )
-
+from backend.api.jobs import router as jobs_router
 from backend.api.usage import (
     router as usage_router,
+)
+from backend.api.resume_rag import (
+    router as resume_rag_router,
+)
+from backend.api.job_rag import (
+    router as job_rag_router,
 )
 
 from backend.core.config import(
@@ -49,6 +59,33 @@ async def lifespan(app:FastAPI):
     yield
 
     logger.info('shutting down the api!!')
+app = FastAPI(
+    title="SmartHire ATS",
+)
+
+
+@app.middleware("http")
+async def request_context_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    request.state.request_id = request_id
+
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception("Unhandled request failure request_id=%s path=%s", request_id, request.url.path)
+        response = JSONResponse(
+            status_code=503,
+            content={
+                "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "SmartHire is temporarily unavailable. The system may be under heavy load. Please try again in a few moments.",
+                    "request_id": request_id,
+                }
+            },
+        )
+
+    response.headers["X-Request-ID"] = request_id
+    return response
 
 app=FastAPI(
     title=APP_TITLE, 
@@ -81,6 +118,13 @@ app.include_router(
 )
 app.include_router(
     llm_settings_router
+)
+app.include_router(jobs_router)
+app.include_router(
+    resume_rag_router
+)
+app.include_router(
+    job_rag_router
 )
 @app.get('/')
 async def root():

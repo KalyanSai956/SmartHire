@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SmartHire ATS JD Comparison</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1f2937;
+            line-height: 1.5;
+        }
+
+        .header {
+            border-bottom: 3px solid #111827;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            padding-bottom: 7px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .match-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+
+        .match-value {
+            font-size: 34px;
+            font-weight: 800;
+        }
+
+        .label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .list-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 7px;
+            padding: 13px;
+        }
+
+        .list-card h3 {
+            margin: 0 0 9px;
+            font-size: 14px;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        li {
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+
+        .empty {
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="brand">SmartHire ATS</div>
+    <div class="subtitle">
+        Job Description Comparison · {{ timestamp | format_date }}
+    </div>
+</div>
+
+
+{% if jd_analysis %}
+
+    {% if jd_analysis.get('match_score') is not none %}
+
+    <div class="match-card">
+
+        <div class="label">
+            JD Match Score
+        </div>
+
+        <div class="match-value">
+            {{ jd_analysis.get('match_score') }}
+        </div>
+
+    </div>
+
+    {% endif %}
+
+
+    <div class="grid">
+
+        <div class="list-card">
+
+            <h3>
+                Matched Skills
+            </h3>
+
+            {% set matched =
+                jd_analysis.get('matched_skills')
+                or jd_analysis.get('matching_skills')
+                or jd_analysis.get('skills_matched')
+                or []
+            %}
+
+            {% if matched %}
+
+                <ul>
+                    {% for item in matched %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+
+            {% else %}
+
+                <div class="empty">
+                    No matched skills available.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="list-card">
+
+            <h3>
+                Missing Skills
+            </h3>
+
+            {% set missing =
+                jd_analysis.get('missing_skills')
+                or jd_analysis.get('skills_missing')
+                or []
+            %}
+
+            {% if missing %}
+
+                <ul>
+                    {% for item in missing %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+
+            {% else %}
+
+                <div class="empty">
+                    No missing skills reported.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <div class="section">
+
+        <div class="section-title">
+            Additional Analysis
+        </div>
+
+        {% for key, value in jd_analysis.items() %}
+
+            {% if key not in [
+                'match_score',
+                'matched_skills',
+                'matching_skills',
+                'skills_matched',
+                'missing_skills',
+                'skills_missing'
+            ] %}
+
+                <div class="list-card" style="margin-bottom: 8px;">
+
+                    <strong>
+                        {{ key.replace('_', ' ')|title }}
+                    </strong>
+
+                    {% if value is iterable and value is not string %}
+
+                        <ul>
+                            {% for item in value %}
+                                <li>{{ item }}</li>
+                            {% endfor %}
+                        </ul>
+
+                    {% else %}
+
+                        <div style="margin-top: 5px; font-size: 12px;">
+                            {{ value }}
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endif %}
+
+        {% endfor %}
+
+    </div>
+
+{% else %}
+
+    <div class="match-card">
+
+        <div class="empty">
+            No job description comparison data is available for this analysis.
+        </div>
+
+    </div>
+
+{% endif %}
+
+
+<div class="footer">
+    Generated by SmartHire ATS · {{ timestamp | format_date }}
+</div>
+
+</body>
+</html>

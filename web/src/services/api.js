@@ -44,9 +44,21 @@ async function request(
           .json()
           .catch(() => null);
 
-      message =
-        data?.detail ||
-        message;
+      if (typeof data?.detail === "string") {
+        message = data.detail;
+      } else if (data?.detail && typeof data.detail === "object") {
+        message =
+          data.detail.message ||
+          data.detail.code ||
+          message;
+      } else if (data?.error && typeof data.error === "object") {
+        message =
+          data.error.message ||
+          data.error.code ||
+          message;
+      } else if (typeof data?.message === "string") {
+        message = data.message;
+      }
 
     } else {
       const text =
@@ -150,10 +162,10 @@ export function deleteHistory(
 export function analyzeResume({
   file,
   jobDescription,
+  provider,
   token,
 }) {
-  const formData =
-    new FormData();
+  const formData = new FormData();
 
   formData.append(
     "resume",
@@ -165,6 +177,12 @@ export function analyzeResume({
     jobDescription || ""
   );
 
+  if (provider) {
+    formData.append(
+      "provider",
+      provider
+    );
+  }
 
   return request(
     "/api/v1/analyze-resume",
@@ -175,7 +193,6 @@ export function analyzeResume({
     }
   );
 }
-
 /* =====================================================
    HISTORY PDF
    ===================================================== */
@@ -460,4 +477,141 @@ export async function getUsageQuota(accessToken) {
   }
 
   return response.json();
+}
+/* =====================================================
+   JOB RECOMMENDATIONS
+   ===================================================== */
+export function getJobRecommendations({
+  token,
+  matchThreshold = 0.25,
+  candidateCount = 50,
+  resultCount = 20,
+  remoteType,
+  employmentType,
+}) {
+  const params = new URLSearchParams();
+
+  params.set("match_threshold", String(matchThreshold));
+  params.set("candidate_count", String(candidateCount));
+  params.set("result_count", String(resultCount));
+
+  if (remoteType) {
+    params.set("remote_type", remoteType);
+  }
+
+  if (employmentType) {
+    params.set("employment_type", employmentType);
+  }
+
+  return request(
+    `/api/v1/job-rag/recommendations?${params.toString()}`,
+    {
+      method: "GET",
+      token,
+    }
+  );
+}
+
+/* =====================================================
+   JOBS
+   ===================================================== */
+
+export async function getJobs({
+  token,
+  page = 1,
+  limit = 20,
+  search = "",
+  location = "",
+  remoteType = "",
+  employmentType = "",
+  experience = "",
+  company = "",
+  sort = "newest",
+} = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    sort,
+  });
+
+  if (search) {
+    params.set("search", search);
+  }
+
+  if (location) {
+    params.set("location", location);
+  }
+
+  if (remoteType) {
+    params.set("remote_type", remoteType);
+  }
+
+  if (employmentType) {
+    params.set("employment_type", employmentType);
+  }
+
+  if (experience) {
+    params.set("experience", experience);
+  }
+
+  if (company) {
+    params.set("company", company);
+  }
+
+  return request(
+    `/api/v1/jobs?${params.toString()}`,
+    {
+      token,
+    },
+  );
+}
+
+
+/* =====================================================
+   SAVED JOBS
+   ===================================================== */
+
+export async function getSavedJobs(token) {
+  return request(
+    "/api/v1/jobs/saved",
+    {
+      token,
+    },
+  );
+}
+
+
+/* =====================================================
+   SAVE JOB
+   ===================================================== */
+
+export async function saveJob(
+  jobId,
+  token,
+) {
+  return request(
+    `/api/v1/jobs/${jobId}/save`,
+    {
+      method: "POST",
+      token,
+    },
+  );
+}
+
+
+/* =====================================================
+   REMOVE SAVED JOB
+   ===================================================== */
+
+export async function removeSavedJob(
+  jobId,
+  token,
+) {
+  return request(
+    `/api/v1/jobs/${jobId}/save`,
+    {
+      method: "DELETE",
+      token,
+    },
+  );
 }

@@ -6,12 +6,6 @@ from backend.models.schemas import (
     JDExperienceRequirement,
     JDEducationRequirement,
 )
-
-
-# ============================================================
-# ROLE / JD SIGNALS
-# ============================================================
-
 ROLE_SIGNALS = {
     "ai": {
         "ai",

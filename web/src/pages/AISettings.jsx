@@ -79,8 +79,25 @@ export default function Settings() {
         (provider) => provider.connected,
       );
 
-      if (connected.length > 0) {
+      const storedProvider =
+        localStorage.getItem("smarthire_active_provider") || "";
+
+      const storedProviderConnected = connected.some(
+        (provider) => provider.provider === storedProvider,
+      );
+
+      if (storedProvider && storedProviderConnected) {
+        setSelectedProvider(storedProvider);
+      } else if (connected.length > 0) {
         setSelectedProvider(connected[0].provider);
+
+        localStorage.setItem(
+          "smarthire_active_provider",
+          connected[0].provider,
+        );
+      } else {
+        setSelectedProvider("");
+        localStorage.removeItem("smarthire_active_provider");
       }
     } catch (err) {
       setError(err.message || "Failed to load AI settings.");
@@ -165,7 +182,8 @@ export default function Settings() {
       await disconnectLLMProvider(token, provider);
 
       if (selectedProvider === provider) {
-        setSelectedProvider("groq");
+        setSelectedProvider("");
+        localStorage.removeItem("smarthire_active_provider");
       }
 
       setMessage(`${PROVIDER_INFO[provider].name} disconnected.`);
@@ -187,18 +205,18 @@ export default function Settings() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-2 settings-page">
+    <div className="mx-auto max-w-7xl px-2 settings-page">
       <div className="settings-container">
         {error && (
           <div className="settings-alert settings-alert-error">
-            <XCircle size={18} />
+            <XCircle size={16} />
             <span>{error}</span>
           </div>
         )}
 
         {message && (
           <div className="settings-alert settings-alert-success">
-            <CheckCircle2 size={18} />
+            <CheckCircle2 size={16} />
             <span>{message}</span>
           </div>
         )}
@@ -228,13 +246,18 @@ export default function Settings() {
                   onClick={() => {
                     if (connected) {
                       setSelectedProvider(provider.provider);
+
+                      localStorage.setItem(
+                        "smarthire_active_provider",
+                        provider.provider,
+                      );
                     }
                   }}
                   disabled={!connected}
                 >
                   <div className="provider-select-top">
                     <div className="provider-icon">
-                      <KeyRound size={18} />
+                      <KeyRound size={16} />
                     </div>
 
                     {connected ? (
@@ -261,7 +284,7 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* Provider Credentials */}
+        {/* Provider Credentials (two-column grid) */}
 
         <section className="settings-section">
           <div className="settings-section-heading">
@@ -295,17 +318,20 @@ export default function Settings() {
 
                     {connected && (
                       <span className="connected-pill">
-                        <CheckCircle2 size={15} />
+                        <CheckCircle2 size={13} />
                         Connected
                       </span>
                     )}
                   </div>
 
                   <div className="provider-form">
-                    <label>API Key</label>
+                    <label htmlFor={`api-key-${provider.provider}`}>
+                      API Key
+                    </label>
 
                     <div className="api-key-wrapper">
                       <input
+                        id={`api-key-${provider.provider}`}
                         type={
                           visibleKeys[provider.provider] ? "text" : "password"
                         }
@@ -327,16 +353,17 @@ export default function Settings() {
                         onClick={() => toggleKeyVisibility(provider.provider)}
                       >
                         {visibleKeys[provider.provider] ? (
-                          <EyeOff size={17} />
+                          <EyeOff size={15} />
                         ) : (
-                          <Eye size={17} />
+                          <Eye size={15} />
                         )}
                       </button>
                     </div>
 
-                    <label>Model</label>
+                    <label htmlFor={`model-${provider.provider}`}>Model</label>
 
                     <input
+                      id={`model-${provider.provider}`}
                       type="text"
                       value={
                         models[provider.provider] ??
@@ -390,11 +417,13 @@ export default function Settings() {
               <div>
                 <h2>AI Usage</h2>
 
-                <p>Track your SmartHire platform allowance.</p>
+                <p>Track your SmartHire platform allowance and AI usage.</p>
               </div>
             </div>
 
             <div className="usage-grid">
+              {/* Resume quota */}
+
               <div className="usage-card">
                 <span>Resume Analyses</span>
 
@@ -405,7 +434,56 @@ export default function Settings() {
 
                 <p>{usage.resume.remaining} free remaining</p>
               </div>
+
+              {/* Platform token quota */}
+
+              <div className="usage-card">
+                <span>Platform AI Tokens</span>
+
+                <strong>
+                  {Number(usage.tokens?.used || 0).toLocaleString()}
+                  <small>
+                    {" "}
+                    / {Number(usage.tokens?.limit || 0).toLocaleString()}
+                  </small>
+                </strong>
+
+                <p>
+                  {Number(usage.tokens?.remaining || 0).toLocaleString()} tokens
+                  remaining
+                </p>
+              </div>
             </div>
+
+            {/* Token breakdown */}
+
+            <div className="token-breakdown">
+              <div>
+                <span>Input tokens</span>
+
+                <strong>
+                  {Number(usage.tokens?.input_tokens || 0).toLocaleString()}
+                </strong>
+              </div>
+
+              <div>
+                <span>Output tokens</span>
+
+                <strong>
+                  {Number(usage.tokens?.output_tokens || 0).toLocaleString()}
+                </strong>
+              </div>
+
+              <div>
+                <span>Total platform tokens</span>
+
+                <strong>
+                  {Number(usage.tokens?.used || 0).toLocaleString()}
+                </strong>
+              </div>
+            </div>
+
+            {/* BYOK */}
 
             {usage.byok?.connected && (
               <div className="byok-info">
@@ -415,6 +493,20 @@ export default function Settings() {
                   You have {usage.byok.providers.length} connected AI provider
                   {usage.byok.providers.length !== 1 ? "s" : ""}.
                 </span>
+              </div>
+            )}
+
+            {usage.byok?.usage && (
+              <div className="byok-usage-info">
+                <span>BYOK tokens used</span>
+
+                <strong>
+                  {Number(usage.byok.usage.total_tokens || 0).toLocaleString()}
+                </strong>
+
+                <small>
+                  BYOK usage does not consume your SmartHire platform allowance.
+                </small>
               </div>
             )}
           </section>

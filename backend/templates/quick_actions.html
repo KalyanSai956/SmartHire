@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SmartHire ATS Skill Validation</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1f2937;
+            line-height: 1.5;
+        }
+
+        .header {
+            border-bottom: 3px solid #111827;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .stat {
+            flex: 1;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 15px;
+            border-radius: 7px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .stat-label {
+            margin-top: 3px;
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            padding-bottom: 7px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .skill {
+            display: inline-block;
+            margin: 0 6px 7px 0;
+            padding: 6px 10px;
+            border-radius: 5px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            font-size: 12px;
+        }
+
+        .validated {
+            border-left: 3px solid #16a34a;
+        }
+
+        .unvalidated {
+            border-left: 3px solid #dc2626;
+        }
+
+        .projects {
+            display: block;
+            margin-top: 3px;
+            font-size: 10px;
+            color: #6b7280;
+        }
+
+        .empty {
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="brand">SmartHire ATS</div>
+    <div class="subtitle">
+        Skill Validation Report · {{ timestamp | format_date }}
+    </div>
+</div>
+
+
+<div class="stats">
+
+    <div class="stat">
+        <div class="stat-value">
+            {{ total_skills }}
+        </div>
+        <div class="stat-label">
+            Total Skills
+        </div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-value">
+            {{ validated_count }}
+        </div>
+        <div class="stat-label">
+            Validated
+        </div>
+    </div>
+
+    <div class="stat">
+        <div class="stat-value">
+            {{ "%.1f"|format(validation_pct|float) }}%
+        </div>
+        <div class="stat-label">
+            Validation Rate
+        </div>
+    </div>
+
+</div>
+
+
+<div class="section">
+
+    <div class="section-title">
+        Validated Skills
+    </div>
+
+    {% if validated_skills %}
+
+        {% for item in validated_skills %}
+
+            <div class="skill validated">
+
+                {% if item is mapping %}
+
+                    <strong>
+                        {{ item.get('skill', 'Unknown Skill') }}
+                    </strong>
+
+                    {% if item.get('projects') %}
+                        <span class="projects">
+                            Projects: {{ item.get('projects')|join(', ') if item.get('projects') is iterable and item.get('projects') is not string else item.get('projects') }}
+                        </span>
+                    {% endif %}
+
+                {% else %}
+
+                    {{ item }}
+
+                {% endif %}
+
+            </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <div class="empty">
+            No validated skills were identified.
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<div class="section">
+
+    <div class="section-title">
+        Skills Requiring Validation
+    </div>
+
+    {% if unvalidated_skills %}
+
+        {% for skill in unvalidated_skills %}
+
+            <div class="skill unvalidated">
+                {{ skill }}
+            </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <div class="empty">
+            All identified skills have supporting evidence.
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<div class="footer">
+    Generated by SmartHire ATS · {{ timestamp | format_date }}
+</div>
+
+</body>
+</html>

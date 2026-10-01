@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, LockKeyhole, Mail, UserRound, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-
 function isValidGmail(email) {
   const value = email.trim().toLowerCase();
 

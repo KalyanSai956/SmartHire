@@ -22,6 +22,8 @@ import {
   uploadProfileResume,
 } from "../services/api";
 
+import "../CSS/Onboarding.css";
+
 const EXPERIENCE_OPTIONS = [
   "Student",
   "Fresher",
@@ -423,19 +425,13 @@ export default function Onboarding() {
         token: accessToken,
       });
 
-      /*
-       * 3. Mark onboarding complete.
-       */
-      await completeOnboarding(accessToken);
-
-      /*
-       * 4. Analyze the exact resume.
-       */
       const analysis = await analyzeResume({
         file: resume,
         jobDescription: "",
         token: accessToken,
       });
+
+      await completeOnboarding(accessToken);
 
       /*
        * 5. Keep the existing cache for any other
@@ -531,38 +527,37 @@ export default function Onboarding() {
    * ----------------------------------------------------
    */
   return (
-    <div className="mx-auto max-w-4xl px-5 py-3 onboarding-page">
-      <div className="onboarding-top">
-        <div className="brand">
-          <img
-            src="/hi-logo-nav.svg"
-            alt="SmartHire"
-            className="brand-logo"
-            width="34"
-            height="28"
-          />
-        </div>
-
-        <span className="onboarding-step">
-          Step {step} of {TOTAL_STEPS}
-        </span>
-      </div>
-
-      <div className="onboarding-progress">
-        <div
-          className="onboarding-progress-fill"
-          style={{
-            width: progress,
-          }}
-        />
-      </div>
-
+    <div className="onboarding-page">
       <main className="onboarding-content">
-        <div className="onboarding-header">
-          <p className="eyebrow">BUILD YOUR CAREER PROFILE</p>
-        </div>
-
         <section className="onboarding-card">
+          {/* LOGO + STEP COUNTER (inside the form card) */}
+          <div className="onboarding-card-head">
+            <img
+              src="/hi-logo-nav.svg"
+              alt="SmartHire"
+              className="brand-logo"
+              width="34"
+              height="28"
+            />
+
+            <span className="onboarding-step">
+              Step {step} of {TOTAL_STEPS}
+            </span>
+          </div>
+
+          <div className="onboarding-progress">
+            <div
+              className="onboarding-progress-fill"
+              style={{
+                width: progress,
+              }}
+            />
+          </div>
+
+          <div className="onboarding-header">
+            <p className="eyebrow">BUILD YOUR CAREER PROFILE</p>
+          </div>
+
           {/* STEP 1 */}
           {step === 1 && (
             <div className="onboarding-section">

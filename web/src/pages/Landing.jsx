@@ -1,348 +1,1195 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import AuthModal from "../components/AuthModal";
 import {
   ArrowRight,
-  CheckCircle2,
+  Check,
   ChevronDown,
   FileSearch,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  Brain,
-  BarChart3,
   BriefcaseBusiness,
+  Sparkles,
+  BrainCircuit,
+  Target,
+  Search,
+  MapPin,
+  Clock3,
+  Menu,
+  X,
+  BarChart3,
+  MessageSquare,
+  Mic,
+  Code2,
+  Layers3,
+  ShieldCheck,
+  Bot,
+  UserRound,
+  Zap,
+  TrendingUp,
+  CircleCheck,
 } from "lucide-react";
+import AuthModal from "../components/AuthModal";
+import "../CSS/Landing.css";
 
 const faqs = [
   {
-    question: "What is an ATS?",
+    question: "What is SmartHire?",
     answer:
-      "An Applicant Tracking System is software companies use to collect, organize, filter, and rank job applications before recruiters review them.",
+      "SmartHire is an AI-powered career workspace that brings resume analysis, job matching, career assistance, and interview preparation together in one place.",
   },
   {
-    question: "How does SmartHire score my resume?",
+    question: "How does SmartHire analyze my resume?",
     answer:
-      "SmartHire analyzes resume structure, formatting, skills, keywords, content quality, and job-description relevance to produce an ATS-oriented score.",
+      "SmartHire evaluates your resume across ATS compatibility, keywords, skills, experience, projects, structure, and content quality to provide actionable insights.",
   },
   {
-    question: "Can I analyze my resume without a job description?",
+    question: "How does job matching work?",
     answer:
-      "Yes. You can run a general resume analysis without providing a job description. Adding a job description enables keyword and job-match analysis.",
+      "SmartHire uses your career profile, resume context, skills, experience, target roles, and job requirements to identify opportunities that are relevant to your profile.",
   },
   {
-    question: "Does SmartHire support different industries?",
+    question: "Can I use my own AI API key?",
     answer:
-      "Yes. The analysis is designed to work across technology, finance, healthcare, marketing, legal, operations, education, and other professional roles.",
+      "Yes. SmartHire supports BYOK configuration for supported AI providers through the AI Settings area.",
   },
   {
-    question: "Is my resume stored?",
+    question: "Are the job application links official?",
     answer:
-      "Your application architecture can store analysis history for your account, while the resume-processing flow is designed to minimize unnecessary exposure of the original document.",
+      "SmartHire preserves the original application URL provided by the supported job source so you can continue to the employer's application page.",
   },
   {
-    question: "Is SmartHire free?",
+    question: "Can I prepare for interviews with SmartHire?",
     answer:
-      "SmartHire is designed around accessible resume analysis without forcing users into premium tiers just to understand their resume.",
+      "Yes. SmartHire can be used as part of your interview preparation workflow, including interview questions and AI-assisted preparation.",
+  },
+  {
+    question: "Does SmartHire automatically apply for jobs?",
+    answer:
+      "No. SmartHire helps you discover and understand opportunities. You decide which opportunities to pursue and apply for.",
+  },
+  {
+    question: "Are saved jobs the same as applications?",
+    answer:
+      "No. Saving a job simply keeps it available in your SmartHire workspace for later review.",
   },
 ];
 
-export default function Landing() {
+const features = [
+  {
+    icon: FileSearch,
+    number: "01",
+    title: "Resume Intelligence",
+    description:
+      "Understand exactly how your resume performs before sending it to another employer.",
+  },
+  {
+    icon: BriefcaseBusiness,
+    number: "02",
+    title: "Job Intelligence",
+    description:
+      "Discover opportunities based on your actual career profile instead of searching blindly.",
+  },
+  {
+    icon: BrainCircuit,
+    number: "03",
+    title: "AI Career Assistant",
+    description:
+      "Ask questions about your resume, jobs, skills, interviews, and career direction.",
+  },
+  {
+    icon: Mic,
+    number: "04",
+    title: "Interview Preparation",
+    description:
+      "Move from job discovery to interview preparation without leaving your career workspace.",
+  },
+];
+
+const jobs = [
+  {
+    title: "Software Development Engineer",
+    company: "Amazon",
+    location: "India",
+    type: "Full-time",
+    match: "91%",
+    skills: ["Java", "Python", "AWS"],
+  },
+  {
+    title: "Software Engineer",
+    company: "Amazon",
+    location: "Bengaluru, India",
+    type: "Full-time",
+    match: "87%",
+    skills: ["JavaScript", "React", "APIs"],
+  },
+  {
+    title: "Machine Learning Engineer",
+    company: "Amazon",
+    location: "Hyderabad, India",
+    type: "Full-time",
+    match: "82%",
+    skills: ["Python", "ML", "SQL"],
+  },
+];
+
+function ScoreBar({ label, value }) {
+  return (
+    <div className="lh-score-row">
+      <div className="lh-score-top">
+        <span>{label}</span>
+        <strong>{value}%</strong>
+      </div>
+
+      <div className="lh-score-track">
+        <div className="lh-score-fill" style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function Landing() {
   const [openFaq, setOpenFaq] = useState(null);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [authModal, setAuthModal] = useState(null);
 
+  const openLogin = () => {
+    setAuthModal("login");
+    setMobileMenu(false);
+  };
+
+  const openSignup = () => {
+    setAuthModal("signup");
+    setMobileMenu(false);
+  };
+
+  const closeAuth = () => {
+    setAuthModal(null);
+  };
+  const toggleFaq = (index) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
+
   return (
-    <div className="landing-page">
-      {/* =====================================================
-          NAVBAR
-          ===================================================== */}
+    <div className="lh-page">
+      <header className="lh-navbar">
+        <div className="lh-container lh-navbar-inner">
+          <Link to="/" className="lh-brand">
+            <span>SmartHire</span>
+          </Link>
 
-      <header className="landing-navbar">
-        <div className="mx-auto max-w-4xl px-4 py-3 landing-container landing-nav-inner">
-          <div className="landing-brand-section">
-            <Link to="/dashboard" className="brand" aria-label="SmartHire home">
-              <img
-                src="/smarthire.png"
-                alt="SmartHire"
-                className="brand-icon"
-                width="34"
-                height="34"
-              />
-            </Link>
-            <a
-              href="https://github.com/KalyanSai956/SmartHire_ATS"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="github-star-btn"
-            >
-              <svg
-                className="github-icon"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  fill="currentColor"
-                  d="M12 .5C5.65.5.5 5.65.5 12c0 5.09 3.29 9.4 7.86 10.92.57.1.78-.25.78-.55v-2.13c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.25 3.33.96.1-.74.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.47.11-3.06 0 0 .96-.31 3.15 1.18A10.9 10.9 0 0 1 12 6.58c.97 0 1.95.13 2.86.39 2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.77.11 3.06.73.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.25 5.69.41.36.78 1.07.78 2.16v3.2c0 .31.21.66.79.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"
-                />
-              </svg>
-
-              <span>Star the repo</span>
-
-              <span className="star-icon">★</span>
+          <nav className={`lh-nav ${mobileMenu ? "lh-nav-open" : ""}`}>
+            <a href="#resume" onClick={() => setMobileMenu(false)}>
+              Resume
             </a>
-          </div>
 
-          <div className="landing-nav-actions">
-            <button
-              type="button"
-              className="landing-login-link landing-auth-button"
-              onClick={() => setAuthModal("login")}
-            >
-              Login
-            </button>
+            <a href="#jobs" onClick={() => setMobileMenu(false)}>
+              Jobs
+            </a>
 
-            <button
-              type="button"
-              className="landing-secondary-button  landing-auth-button"
-              onClick={() => setAuthModal("signup")}
-            >
-              Get started
-              <ArrowRight size={15} />
-            </button>
-          </div>
+            <a href="#ai" onClick={() => setMobileMenu(false)}>
+              AI Assistant
+            </a>
+
+            <a href="#interview" onClick={() => setMobileMenu(false)}>
+              Interviews
+            </a>
+
+            <a href="#faq" onClick={() => setMobileMenu(false)}>
+              FAQ
+            </a>
+
+            <div className="lh-desktop-actions">
+              <button
+                type="button"
+                className="lh-login-btn"
+                onClick={openLogin}
+              >
+                Login
+              </button>
+
+              <button
+                type="button"
+                className="lh-primary-btn"
+                onClick={openSignup}
+              >
+                Get Started
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </nav>
+
+          <button
+            type="button"
+            className="lh-menu-btn"
+            onClick={() => setMobileMenu(!mobileMenu)}
+          >
+            {mobileMenu ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </header>
+
       <main>
-        <section className="mx-auto max-w-5xl px-4 py-3 landing-hero">
-          <div className="landing-container">
-            <div className="landing-hero-content">
+        <section className="lh-hero">
+          <div className="lh-hero-glow lh-hero-glow-one" />
+          <div className="lh-hero-glow lh-hero-glow-two" />
+
+          <div className="lh-container">
+            <div className="lh-hero-content">
               <h1>
-                Make every line
-                <span> Count.</span>
+                Your resume gets you noticed.
+                <span>SmartHire helps you move forward.</span>
               </h1>
-              <div className="landing-hero-captions">
-                <span className="landing-hero-caption">
-                  AI Resume Intelligence
-                </span>
 
-                <span className="landing-hero-caption">
-                  Interview Preparation
-                </span>
+              <p>
+                Analyze your resume, discover jobs that match your profile,
+                understand your skill gaps, and prepare for interviews from one
+                intelligent career workspace.
+              </p>
 
-                <span className="landing-hero-caption">
-                  Smarter Career Decisions
-                </span>
+              <div className="lh-hero-actions">
+                <button
+                  type="button"
+                  className="lh-primary-btn lh-large-btn"
+                  onClick={openSignup}
+                >
+                  Analyze My Resume
+                  <ArrowRight size={17} />
+                </button>
+
+                <a href="#jobs" className="lh-outline-btn lh-large-btn">
+                  Explore Jobs
+                </a>
               </div>
-              <div className="landing-hero-actions">
-                <button
-                  type="button"
-                  className="landing-secondary-button  landing-auth-button"
-                  onClick={() => setAuthModal("signup")}
-                >
-                  Analyze my resume
-                  <ArrowRight size={17} />
-                </button>
 
-                <button
-                  type="button"
-                  className="landing-secondary-button landing-auth-button"
-                  onClick={() => setAuthModal("login")}
-                >
-                  Login
-                  <ArrowRight size={17} />
-                </button>
+              <div className="lh-hero-note">
+                <CircleCheck size={16} />
+                Built around your resume, skills, experience, and goals.
               </div>
             </div>
 
-            {/* HERO ANALYSIS PREVIEW */}
-
-            <div className="landing-preview">
-              <div className="preview-window">
-                <div className="preview-topbar">
-                  <div className="preview-dots">
+            <div className="lh-hero-product">
+              <div className="lh-browser">
+                <div className="lh-browser-bar">
+                  <div className="lh-browser-dots">
                     <span />
                     <span />
                     <span />
                   </div>
 
-                  <span>SmartHire Analysis</span>
+                  <div className="lh-browser-url">
+                    app.smarthire.ai/dashboard
+                  </div>
 
-                  <div />
+                  <div className="lh-browser-secure">
+                    <ShieldCheck size={12} />
+                  </div>
                 </div>
 
-                <div className="preview-body">
-                  <div className="preview-header">
-                    <div>
-                      <small>RESUME ANALYSIS</small>
-                      <strong>Software Engineer</strong>
+                <div className="lh-dashboard">
+                  <aside className="lh-dashboard-sidebar">
+                    <div className="lh-dashboard-logo">
+                      <img src="/smarthire.png" alt="" />
+                      <span>SmartHire</span>
                     </div>
 
-                    <span className="preview-status">ANALYZED</span>
+                    <div className="lh-sidebar-section">
+                      <span>Workspace</span>
+
+                      <div className="lh-sidebar-active">
+                        <BarChart3 size={15} />
+                        Overview
+                      </div>
+
+                      <div>
+                        <FileSearch size={15} />
+                        Resume
+                      </div>
+
+                      <div>
+                        <BriefcaseBusiness size={15} />
+                        Jobs
+                      </div>
+
+                      <div>
+                        <MessageSquare size={15} />
+                        AI Assistant
+                      </div>
+                    </div>
+
+                    <div className="lh-sidebar-section lh-sidebar-bottom">
+                      <div>
+                        <UserRound size={15} />
+                        Profile
+                      </div>
+
+                      <div>
+                        <ShieldCheck size={15} />
+                        AI Settings
+                      </div>
+                    </div>
+                  </aside>
+
+                  <div className="lh-dashboard-main">
+                    <div className="lh-dashboard-top">
+                      <div>
+                        <span>Good morning</span>
+                        <h3>Your career overview</h3>
+                      </div>
+
+                      <div className="lh-user-avatar">SK</div>
+                    </div>
+
+                    <div className="lh-dashboard-grid">
+                      <div className="lh-dashboard-score">
+                        <div className="lh-card-label">Resume Score</div>
+
+                        <div className="lh-big-score">
+                          82
+                          <small>/100</small>
+                        </div>
+
+                        <div className="lh-score-status">
+                          <TrendingUp size={13} />
+                          Strong resume foundation
+                        </div>
+
+                        <div className="lh-mini-bars">
+                          <ScoreBar label="Keywords" value={88} />
+
+                          <ScoreBar label="Skills" value={91} />
+
+                          <ScoreBar label="Projects" value={84} />
+                        </div>
+                      </div>
+
+                      <div className="lh-dashboard-match">
+                        <div className="lh-card-label">Top job match</div>
+
+                        <div className="lh-match-job">
+                          <div className="lh-job-mini-logo">
+                            <BriefcaseBusiness size={16} />
+                          </div>
+
+                          <div>
+                            <strong>Software Development Engineer</strong>
+                            <span>Amazon · India</span>
+                          </div>
+
+                          <div className="lh-match-number">91%</div>
+                        </div>
+
+                        <div className="lh-match-skills">
+                          <span>Java</span>
+                          <span>Python</span>
+                          <span>AWS</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="lh-dashboard-bottom">
+                      <div className="lh-dashboard-bottom-title">
+                        Recommended for you
+                      </div>
+
+                      <div className="lh-recommendation-row">
+                        <div className="lh-recommendation-icon">
+                          <Target size={15} />
+                        </div>
+
+                        <div>
+                          <strong>12 opportunities match your profile</strong>
+                          <span>Based on your skills and target roles</span>
+                        </div>
+
+                        <ArrowRight size={16} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lh-floating lh-floating-one">
+                <div className="lh-floating-icon">
+                  <Zap size={15} />
+                </div>
+
+                <div>
+                  <strong>91% match</strong>
+                  <span>Amazon opportunity</span>
+                </div>
+              </div>
+
+              <div className="lh-floating lh-floating-two">
+                <div className="lh-floating-icon">
+                  <Check size={15} />
+                </div>
+
+                <div>
+                  <strong>3 skills matched</strong>
+                  <span>Strong profile alignment</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="lh-intro-strip">
+          <div className="lh-container">
+            <div className="lh-intro-grid">
+              <div>
+                <strong>Resume</strong>
+                <span>Understand your profile</span>
+              </div>
+
+              <div>
+                <strong>Jobs</strong>
+                <span>Find relevant opportunities</span>
+              </div>
+
+              <div>
+                <strong>AI</strong>
+                <span>Get career guidance</span>
+              </div>
+
+              <div>
+                <strong>Interview</strong>
+                <span>Prepare with confidence</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="resume" className="lh-section lh-resume-section">
+          <div className="lh-container">
+            <div className="lh-section-intro">
+              <div className="lh-section-number">01</div>
+
+              <div>
+                <div className="lh-small-label">
+                  <FileSearch size={14} />
+                  Resume Intelligence
+                </div>
+
+                <h2>
+                  Don't just get an ATS score.
+                  <span>Understand your resume.</span>
+                </h2>
+
+                <p>
+                  SmartHire breaks your resume down into the areas that
+                  influence how effectively it communicates your skills and
+                  experience.
+                </p>
+              </div>
+            </div>
+
+            <div className="lh-resume-layout">
+              <div className="lh-resume-preview">
+                <div className="lh-resume-paper">
+                  <div className="lh-resume-paper-header">
+                    <div className="lh-resume-name">SOFTWARE ENGINEER</div>
+
+                    <div className="lh-resume-contact">
+                      Hyderabad · India · developer@email.com
+                    </div>
                   </div>
 
-                  <div className="preview-score-row">
-                    <div className="preview-score">
-                      <strong>81</strong>
-                      <span>/ 100</span>
-                    </div>
+                  <div className="lh-resume-line large" />
+                  <div className="lh-resume-line" />
+                  <div className="lh-resume-line medium" />
 
-                    <div className="preview-score-copy">
-                      <strong>Strong ATS compatibility</strong>
-                      <p>
-                        Your resume is performing well, with opportunities to
-                        improve keyword coverage.
-                      </p>
-                    </div>
+                  <div className="lh-resume-block">
+                    <strong>EXPERIENCE</strong>
+                    <div className="lh-resume-line" />
+                    <div className="lh-resume-line medium" />
+                    <div className="lh-resume-line" />
                   </div>
 
-                  <div className="preview-bars">
-                    <PreviewBar label="Formatting" value={90} />
+                  <div className="lh-resume-block">
+                    <strong>PROJECTS</strong>
+                    <div className="lh-resume-line large" />
+                    <div className="lh-resume-line medium" />
+                    <div className="lh-resume-line" />
+                  </div>
 
-                    <PreviewBar label="Content Quality" value={78} />
+                  <div className="lh-resume-block">
+                    <strong>SKILLS</strong>
 
-                    <PreviewBar label="ATS Compatibility" value={95} />
+                    <div className="lh-resume-tags">
+                      <span>Java</span>
+                      <span>React</span>
+                      <span>Python</span>
+                      <span>SQL</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                    <PreviewBar label="Keywords & Skills" value={72} />
+              <div className="lh-analysis-panel">
+                <div className="lh-analysis-header">
+                  <div>
+                    <span>Resume analysis</span>
+                    <strong>Overall score</strong>
+                  </div>
+
+                  <div className="lh-analysis-score">82</div>
+                </div>
+
+                <div className="lh-analysis-bars">
+                  <ScoreBar label="Keyword Match" value={88} />
+
+                  <ScoreBar label="Skills Match" value={91} />
+
+                  <ScoreBar label="Project Relevance" value={84} />
+
+                  <ScoreBar label="Resume Quality" value={76} />
+                </div>
+
+                <div className="lh-insight">
+                  <div className="lh-insight-icon">
+                    <Sparkles size={15} />
+                  </div>
+
+                  <div>
+                    <strong>Actionable insight</strong>
+                    <p>
+                      Your project section is strong. Consider adding measurable
+                      outcomes to your experience bullets.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
-        {/* =====================================================
-            FAQ
-            ===================================================== */}
 
-        <section
-          id="faq"
-          className="mx-auto max-w-7xl px-3 py-4 landing-section landing-faq"
-        >
-          <div className="landing-container landing-faq-container">
-            <div className="landing-section-heading">
-              <span className="landing-section-kicker">FAQ</span>
+        <section className="lh-dark-section">
+          <div className="lh-container">
+            <div className="lh-dark-intro">
+              <div className="lh-small-label lh-light-label">
+                <BrainCircuit size={14} />
+                Career intelligence
+              </div>
+
+              <h2>
+                Your resume is more than a document.
+                <span>It's your career context.</span>
+              </h2>
+
+              <p>
+                SmartHire uses the information you provide to create a deeper
+                understanding of your career direction, skills, experience, and
+                target roles.
+              </p>
             </div>
 
-            <div className="landing-faq-list">
+            <div className="lh-context-grid">
+              <div className="lh-context-card">
+                <UserRound size={19} />
+                <strong>Career Profile</strong>
+                <span>
+                  Your interests, experience, skills, and target roles.
+                </span>
+              </div>
+
+              <div className="lh-context-card">
+                <Layers3 size={19} />
+                <strong>Resume Context</strong>
+                <span>
+                  Projects, experience, achievements, and technical skills.
+                </span>
+              </div>
+
+              <div className="lh-context-card">
+                <Target size={19} />
+                <strong>Career Direction</strong>
+                <span>Roles and opportunities aligned with your goals.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="jobs" className="lh-section lh-jobs-section">
+          <div className="lh-container">
+            <div className="lh-section-intro">
+              <div className="lh-section-number">02</div>
+
+              <div>
+                <div className="lh-small-label">
+                  <BriefcaseBusiness size={14} />
+                  Job Intelligence
+                </div>
+
+                <h2>
+                  Stop searching through everything.
+                  <span>Find what fits you.</span>
+                </h2>
+
+                <p>
+                  SmartHire uses your career profile and resume context to
+                  identify opportunities that are relevant to your skills,
+                  experience, and target roles.
+                </p>
+              </div>
+            </div>
+
+            <div className="lh-jobs-layout">
+              <div className="lh-jobs-copy">
+                <div className="lh-search-box">
+                  <Search size={17} />
+                  <span>Search your recommended jobs...</span>
+                </div>
+
+                <div className="lh-filter-row">
+                  <span>Recommended</span>
+                  <span>India</span>
+                  <span>Software</span>
+                  <span>Full-time</span>
+                </div>
+
+                <div className="lh-job-summary">
+                  <strong>20</strong>
+                  <span>recommended opportunities</span>
+                </div>
+              </div>
+
+              <div className="lh-job-results">
+                {jobs.map((job) => (
+                  <article className="lh-job-card" key={job.title}>
+                    <div className="lh-job-main">
+                      <div className="lh-job-logo">
+                        <BriefcaseBusiness size={17} />
+                      </div>
+
+                      <div className="lh-job-content">
+                        <h3>{job.title}</h3>
+
+                        <strong>{job.company}</strong>
+
+                        <div className="lh-job-meta">
+                          <span>
+                            <MapPin size={13} />
+                            {job.location}
+                          </span>
+
+                          <span>
+                            <Clock3 size={13} />
+                            {job.type}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="lh-job-match">
+                        <strong>{job.match}</strong>
+                        <span>match</span>
+                      </div>
+                    </div>
+
+                    <div className="lh-job-bottom">
+                      <div className="lh-job-skills">
+                        {job.skills.map((skill) => (
+                          <span key={skill}>{skill}</span>
+                        ))}
+                      </div>
+
+                      <button type="button">
+                        View Job
+                        <ArrowRight size={13} />
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="ai" className="lh-ai-section">
+          <div className="lh-container">
+            <div className="lh-ai-layout">
+              <div className="lh-ai-copy">
+                <div className="lh-section-number">03</div>
+
+                <div className="lh-small-label">
+                  <Bot size={14} />
+                  AI Career Assistant
+                </div>
+
+                <h2>
+                  Ask about your career.
+                  <span>Get answers with context.</span>
+                </h2>
+
+                <p>
+                  Instead of starting every career question from scratch,
+                  SmartHire can work around your resume, profile, job
+                  requirements, and career goals.
+                </p>
+
+                <div className="lh-ai-checks">
+                  <div>
+                    <Check size={15} />
+                    Resume-aware conversations
+                  </div>
+
+                  <div>
+                    <Check size={15} />
+                    Job-specific guidance
+                  </div>
+
+                  <div>
+                    <Check size={15} />
+                    Career improvement ideas
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="lh-primary-btn"
+                  onClick={openSignup}
+                >
+                  Talk to SmartHire AI
+                  <ArrowRight size={15} />
+                </button>
+              </div>
+
+              <div className="lh-chat-window">
+                <div className="lh-chat-header">
+                  <div className="lh-chat-avatar">
+                    <Sparkles size={16} />
+                  </div>
+
+                  <div>
+                    <strong>SmartHire AI</strong>
+                    <span>Career Assistant</span>
+                  </div>
+
+                  <div className="lh-chat-status">
+                    <span />
+                    Online
+                  </div>
+                </div>
+
+                <div className="lh-chat-messages">
+                  <div className="lh-message lh-user-message">
+                    Am I a good match for this Amazon software engineering role?
+                  </div>
+
+                  <div className="lh-message lh-ai-message">
+                    <div className="lh-ai-message-label">
+                      <Sparkles size={13} />
+                      SmartHire AI
+                    </div>
+
+                    <p>
+                      Your profile shows strong alignment with this role. Your
+                      Java, Python, and API experience are relevant.
+                    </p>
+
+                    <div className="lh-chat-result">
+                      <div>
+                        <strong>91%</strong>
+                        <span>profile match</span>
+                      </div>
+
+                      <div>
+                        <strong>8/10</strong>
+                        <span>required skills</span>
+                      </div>
+
+                      <div>
+                        <strong>3</strong>
+                        <span>skills to improve</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="lh-message lh-user-message">
+                    What should I improve first?
+                  </div>
+
+                  <div className="lh-chat-input">
+                    <span>Ask SmartHire anything...</span>
+                    <ArrowRight size={15} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="interview" className="lh-section lh-interview-section">
+          <div className="lh-container">
+            <div className="lh-section-intro">
+              <div className="lh-section-number">04</div>
+
+              <div>
+                <div className="lh-small-label">
+                  <Mic size={14} />
+                  Interview Preparation
+                </div>
+
+                <h2>
+                  Found the job?
+                  <span>Prepare for the conversation.</span>
+                </h2>
+
+                <p>
+                  Turn the job you discovered into focused interview preparation
+                  with questions and practice built around the role.
+                </p>
+              </div>
+            </div>
+
+            <div className="lh-interview-grid">
+              <div className="lh-interview-card lh-interview-main">
+                <div className="lh-interview-card-top">
+                  <div className="lh-interview-icon">
+                    <Mic size={18} />
+                  </div>
+
+                  <span>Mock Interview</span>
+                </div>
+
+                <h3>Practice before the real interview.</h3>
+
+                <p>
+                  Prepare with role-specific interview questions and structured
+                  AI-assisted practice.
+                </p>
+
+                <div className="lh-interview-preview">
+                  <div className="lh-question-number">Question 03 / 10</div>
+
+                  <strong>
+                    Explain a challenging project you worked on and how you
+                    solved the problem.
+                  </strong>
+
+                  <div className="lh-record-btn">
+                    <Mic size={15} />
+                    Start answering
+                  </div>
+                </div>
+              </div>
+
+              <div className="lh-interview-side">
+                <div className="lh-interview-small-card">
+                  <Code2 size={18} />
+                  <div>
+                    <strong>Technical Questions</strong>
+                    <span>Practice questions based on your target role.</span>
+                  </div>
+                </div>
+
+                <div className="lh-interview-small-card">
+                  <MessageSquare size={18} />
+                  <div>
+                    <strong>Behavioral Questions</strong>
+                    <span>
+                      Prepare stronger stories for common interview topics.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="lh-interview-small-card">
+                  <Target size={18} />
+                  <div>
+                    <strong>Role Focus</strong>
+                    <span>Prepare around the job you actually want.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="lh-workspace-section">
+          <div className="lh-container">
+            <div className="lh-workspace-heading">
+              <div className="lh-small-label lh-light-label">
+                <Layers3 size={14} />
+                One Career Workspace
+              </div>
+
+              <h2>
+                Everything connected.
+                <span>Nothing scattered.</span>
+              </h2>
+
+              <p>
+                Your resume, career profile, jobs, AI tools, and interview
+                preparation work together inside SmartHire.
+              </p>
+            </div>
+
+            <div className="lh-workspace-map">
+              <div className="lh-workspace-center">
+                <img src="/smarthire.png" alt="SmartHire" />
+                <strong>SmartHire</strong>
+                <span>Career Workspace</span>
+              </div>
+
+              <div className="lh-workspace-node lh-node-one">
+                <FileSearch size={17} />
+                <strong>Resume</strong>
+                <span>Analyze</span>
+              </div>
+
+              <div className="lh-workspace-node lh-node-two">
+                <BriefcaseBusiness size={17} />
+                <strong>Jobs</strong>
+                <span>Discover</span>
+              </div>
+
+              <div className="lh-workspace-node lh-node-three">
+                <Bot size={17} />
+                <strong>AI</strong>
+                <span>Ask</span>
+              </div>
+
+              <div className="lh-workspace-node lh-node-four">
+                <Mic size={17} />
+                <strong>Interviews</strong>
+                <span>Prepare</span>
+              </div>
+
+              <div className="lh-workspace-line lh-line-one" />
+              <div className="lh-workspace-line lh-line-two" />
+              <div className="lh-workspace-line lh-line-three" />
+              <div className="lh-workspace-line lh-line-four" />
+            </div>
+          </div>
+        </section>
+
+        <section className="lh-byoK-section">
+          <div className="lh-container">
+            <div className="lh-byok-card">
+              <div>
+                <div className="lh-small-label">
+                  <ShieldCheck size={14} />
+                  AI Gateway
+                </div>
+
+                <h2>
+                  Your AI.
+                  <span>Your control.</span>
+                </h2>
+
+                <p>
+                  Connect supported AI providers through SmartHire's AI Settings
+                  when you want to use your own API credentials.
+                </p>
+
+                <div className="lh-provider-list">
+                  <span>Groq</span>
+                  <span>OpenAI</span>
+                  <span>Google</span>
+                  <span>Anthropic</span>
+                </div>
+
+                <button
+                  type="button"
+                  className="lh-primary-btn"
+                  onClick={openSignup}
+                >
+                  Explore AI Settings
+                  <ArrowRight size={15} />
+                </button>
+              </div>
+
+              <div className="lh-provider-panel">
+                <div className="lh-provider-header">
+                  <div className="lh-provider-avatar">
+                    <BrainCircuit size={17} />
+                  </div>
+
+                  <div>
+                    <strong>AI Settings</strong>
+                    <span>Connected providers</span>
+                  </div>
+                </div>
+
+                <div className="lh-provider-item">
+                  <div>
+                    <strong>Google Gemini</strong>
+                    <span>Connected</span>
+                  </div>
+
+                  <Check size={17} />
+                </div>
+
+                <div className="lh-provider-item">
+                  <div>
+                    <strong>Groq</strong>
+                    <span>Available</span>
+                  </div>
+
+                  <ArrowRight size={16} />
+                </div>
+
+                <div className="lh-provider-item">
+                  <div>
+                    <strong>OpenAI</strong>
+                    <span>Available</span>
+                  </div>
+
+                  <ArrowRight size={16} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="faq" className="lh-section lh-faq-section">
+          <div className="lh-container lh-faq-layout">
+            <div className="lh-faq-intro">
+              <div className="lh-small-label">
+                <Search size={14} />
+                Frequently Asked Questions
+              </div>
+
+              <h2>
+                Questions?
+                <span>We've got answers.</span>
+              </h2>
+
+              <p>
+                Everything you need to know before starting your SmartHire
+                journey.
+              </p>
+
+              <button
+                type="button"
+                className="lh-outline-btn"
+                onClick={openSignup}
+              >
+                Get Started
+                <ArrowRight size={15} />
+              </button>
+            </div>
+
+            <div className="lh-faq-list">
               {faqs.map((faq, index) => {
                 const isOpen = openFaq === index;
 
                 return (
                   <div
-                    className={`landing-faq-item ${isOpen ? "open" : ""}`}
+                    className={`lh-faq-item ${isOpen ? "lh-faq-open" : ""}`}
                     key={faq.question}
                   >
                     <button
                       type="button"
-                      onClick={() => setOpenFaq(isOpen ? null : index)}
+                      className="lh-faq-question"
+                      onClick={() => toggleFaq(index)}
                     >
                       <span>{faq.question}</span>
 
-                      <ChevronDown size={18} className="landing-faq-icon" />
+                      <ChevronDown size={18} className="lh-faq-chevron" />
                     </button>
 
-                    {isOpen && (
-                      <div className="landing-faq-answer">
-                        <p>{faq.answer}</p>
-                      </div>
-                    )}
+                    <div className="lh-faq-answer">
+                      <p>{faq.answer}</p>
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
         </section>
+
+        <section className="lh-final-cta">
+          <div className="lh-container">
+            <div className="lh-final-card">
+              <div className="lh-final-pill">
+                <Sparkles size={14} />
+                Start your SmartHire journey
+              </div>
+
+              <h2>
+                Your next opportunity
+                <span>starts here.</span>
+              </h2>
+
+              <p>
+                Analyze your resume. Discover relevant jobs. Prepare for
+                interviews. Build your career with SmartHire.
+              </p>
+
+              <button
+                type="button"
+                className="lh-white-btn"
+                onClick={openSignup}
+              >
+                Get Started with SmartHire
+                <ArrowRight size={17} />
+              </button>
+            </div>
+          </div>
+        </section>
       </main>
 
-      {/* =====================================================
-          FOOTER
-          ===================================================== */}
+      <footer className="lh-footer">
+        <div className="lh-container">
+          <div className="lh-footer-top">
+            <div className="lh-footer-brand">
+              <Link to="/" className="lh-brand">
+                <img src="/smarthire.png" alt="SmartHire" />
+                <span>SmartHire</span>
+              </Link>
 
-      <footer className="mx-auto max-w-4xl px-3 py-3 landing-footer">
-        <div className="landing-container landing-footer-inner">
-          <div className="landing-footer-brand">
-            <Link to="/" className="landing-brand">
-              <span>SmartHire</span>
-            </Link>
-
-            <p>AI-powered resume analysis for smarter job applications.</p>
-          </div>
-
-          <div className="landing-footer-links">
-            <div>
-              <strong>Account</strong>
-
-              <button
-                className="landing-secondary-button"
-                type="button"
-                onClick={() => setAuthModal("login")}
-              >
-                Login
-              </button>
-
-              <button
-                className="landing-secondary-button"
-                type="button"
-                onClick={() => setAuthModal("signup")}
-              >
-                Sign up
-              </button>
+              <p>
+                AI-powered resume intelligence, job discovery, career
+                assistance, and interview preparation.
+              </p>
             </div>
 
-            <div>
-              <strong>Support</strong>
+            <div className="lh-footer-links">
+              <div>
+                <strong>Product</strong>
+                <a href="#resume">Resume</a>
+                <a href="#jobs">Jobs</a>
+                <a href="#ai">AI Assistant</a>
+                <a href="#interview">Interviews</a>
+              </div>
 
-              <a href="#faq">FAQ</a>
+              <div>
+                <strong>Resources</strong>
+                <a href="#faq">FAQ</a>
+                <a href="#jobs">Job Discovery</a>
+                <a href="#resume">Resume Analysis</a>
+              </div>
+
+              <div>
+                <strong>Account</strong>
+                <button type="button" onClick={openLogin}>
+                  Login
+                </button>
+
+                <button type="button" onClick={openSignup}>
+                  Get Started
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="landing-footer-bottom">
-          <div className="landing-container">
-            <span>© {new Date().getFullYear()} SmartHire</span>
+          <div className="lh-footer-bottom">
+            <span>
+              © {new Date().getFullYear()} SmartHire. All rights reserved.
+            </span>
 
-            <span>Built for smarter applications.</span>
+            <span>Built for smarter career decisions.</span>
           </div>
         </div>
       </footer>
+
       {authModal && (
         <AuthModal
           mode={authModal}
-          onClose={() => setAuthModal(null)}
-          onModeChange={(mode) => setAuthModal(mode)}
+          onClose={closeAuth}
+          onModeChange={setAuthModal}
         />
       )}
     </div>
   );
 }
 
-/* =========================================================
-   SMALL COMPONENTS
-   ========================================================= */
-
-function PreviewBar({ label, value }) {
-  return (
-    <div className="preview-bar">
-      <div className="preview-bar-label">
-        <span>{label}</span>
-        <strong>{value}%</strong>
-      </div>
-
-      <div className="preview-bar-track">
-        <span style={{ width: `${value}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function Step({ number, title, description }) {
-  return (
-    <article className="landing-step">
-      <span className="landing-step-number">{number}</span>
-
-      <div>
-        <h3>{title}</h3>
-        <p>{description}</p>
-      </div>
-    </article>
-  );
-}
+export default Landing;

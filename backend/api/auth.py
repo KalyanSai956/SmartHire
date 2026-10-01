@@ -86,7 +86,7 @@ def get_current_user(
     except jwt.InvalidTokenError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f'Invalid token: {exc}',
+            detail="Your session is invalid. Please sign in again.",
             headers={'WWW-Authenticate': 'Bearer'},
         )
     except Exception as exc:
@@ -95,7 +95,7 @@ def get_current_user(
         logger.warning(f'JWT verification failed: {exc}')
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f'Token verification failed: {exc}',
+            detail="Your session could not be verified. Please sign in again.",
             headers={'WWW-Authenticate': 'Bearer'},
         )
 

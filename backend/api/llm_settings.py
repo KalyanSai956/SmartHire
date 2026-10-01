@@ -14,6 +14,7 @@ from backend.services.llm.credentials import (
     SUPPORTED_BYOK_PROVIDERS,
     encrypt_api_key,
     get_last4,
+    validate_api_key,
 )
 
 
@@ -34,7 +35,7 @@ PROVIDER_METADATA = {
     },
     "anthropic": {
         "name": "Anthropic",
-        "default_model": "claude-3-5-haiku-latest",
+        "default_model": "claude-haiku-4-5-20251001",
     },
     "google": {
         "name": "Google Gemini",
@@ -128,6 +129,18 @@ async def connect_llm_provider(
         if payload.model and payload.model.strip()
         else PROVIDER_METADATA[provider]["default_model"]
     )
+
+    valid, validation_message = await validate_api_key(
+        provider=provider,
+        api_key=api_key,
+        model=model,
+    )
+
+    if not valid:
+        raise HTTPException(
+            status_code=422,
+            detail=validation_message,
+        )
 
     encrypted_api_key = encrypt_api_key(api_key)
 

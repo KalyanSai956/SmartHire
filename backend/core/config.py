@@ -63,3 +63,9 @@ LLM_CREDENTIAL_ENCRYPTION_KEY = (
         "",
     ).strip()
 )
+PLATFORM_AI_TOKEN_LIMIT = int(
+    os.getenv(
+        "PLATFORM_AI_TOKEN_LIMIT",
+        "100000",
+    )
+)

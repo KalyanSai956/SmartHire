@@ -6,6 +6,8 @@ import ProfileRequired from "./components/ProfileRequired";
 import WorkspaceLayout from "./components/WorkspaceLayout";
 import Job from "./pages/Jobs";
 import AISettings from "./pages/AISettings";
+import Resources from "./pages/Resources";
+import InterviewPrep from "./pages/InterviewPrep";
 
 const Landing = lazy(() => import("./pages/Landing"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -36,7 +38,7 @@ function NotFound() {
 
       <p>The page you're looking for doesn't exist.</p>
 
-      <a href="/dashboard" className="button primary">
+      <a href="/dashboard" className="button secondary">
         Go to Dashboard
       </a>
     </div>
@@ -66,16 +68,6 @@ export default function App() {
           }
         />
 
-        {/* =====================================================
-            AUTHENTICATED SMART HIRE WORKSPACE
-           
-            WorkspaceLayout provides:
-            - Navbar
-            - Left Career Sidebar
-            - Main page content
-            - Right AI Career Insights
-            ===================================================== */}
-
         <Route
           element={
             <Protected>
@@ -100,6 +92,8 @@ export default function App() {
           {/* AI Settings */}
           <Route path="/settings" element={<AISettings />} />
           <Route path="/jobs" element={<Job />} />
+          <Route path="/interview-prep" element={<InterviewPrep />} />
+          <Route path="/resources" element={<Resources />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

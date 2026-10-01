@@ -23,119 +23,6 @@ def _get_rest_url(table: str) -> str:
 
     return f"{SUPABASE_URL.rstrip('/')}/rest/v1/{table}"
 
-
-async def supabase_rest_get(
-    table: str,
-    params: Optional[Dict] = None,
-) -> List[Dict]:
-    headers = _get_headers()
-
-    if not headers:
-        raise RuntimeError(
-            "Supabase database configuration is not available."
-        )
-
-    url = _get_rest_url(table)
-
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url,
-                headers=headers,
-                params=params or {},
-            )
-
-            response.raise_for_status()
-
-            data = response.json()
-
-            return data if isinstance(data, list) else []
-
-    except Exception as exc:
-        logger.error(
-            f"Supabase GET failed for {table}: {exc}"
-        )
-        raise
-
-
-async def supabase_rest_post(
-    table: str,
-    data: Any,
-) -> List[Dict[str, Any]]:
-    headers = _get_headers()
-
-    if not headers:
-        raise RuntimeError(
-            "Supabase database configuration is not available."
-        )
-
-    headers = {
-        **headers,
-        "Prefer": "return=representation",
-    }
-
-    url = _get_rest_url(table)
-
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url,
-                headers=headers,
-                json=data,
-            )
-
-            response.raise_for_status()
-
-            result = response.json()
-
-            return result if isinstance(result, list) else []
-
-    except Exception as exc:
-        logger.error(
-            f"Supabase POST failed for {table}: {exc}"
-        )
-        raise
-
-
-async def supabase_rest_patch(
-    table: str,
-    params: Dict,
-    data: Dict,
-) -> List[Dict]:
-    headers = _get_headers()
-
-    if not headers:
-        raise RuntimeError(
-            "Supabase database configuration is not available."
-        )
-
-    headers = {
-        **headers,
-        "Prefer": "return=representation",
-    }
-
-    url = _get_rest_url(table)
-
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.patch(
-                url,
-                headers=headers,
-                params=params,
-                json=data,
-            )
-
-            response.raise_for_status()
-
-            result = response.json()
-
-            return result if isinstance(result, list) else []
-
-    except Exception as exc:
-        logger.error(
-            f"Supabase PATCH failed for {table}: {exc}"
-        )
-        raise
 async def supabase_rest_delete(
     table: str,
     params: Optional[Dict] = None,
@@ -646,26 +533,50 @@ async def supabase_rest_get(
 
     url = _get_rest_url(table)
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            url,
-            headers=headers,
-            params=params or {},
+    try:
+        timeout = httpx.Timeout(
+            connect=10.0,
+            read=30.0,
+            write=30.0,
+            pool=10.0,
         )
 
-        response.raise_for_status()
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.get(
+                url,
+                headers=headers,
+                params=params or {},
+            )
 
-        data = response.json()
+            response.raise_for_status()
 
-        if isinstance(data, list):
-            return data
+            data = response.json()
 
-        return []
+            if isinstance(data, list):
+                return data
+
+            return []
+
+    except httpx.TimeoutException as exc:
+        logger.error(
+            "Supabase GET timeout for %s: %s",
+            table,
+            exc,
+        )
+        raise
+
+    except Exception as exc:
+        logger.exception(
+            "Supabase GET failed for %s: %s",
+            table,
+            exc,
+        )
+        raise
 
 
 async def supabase_rest_post(
     table: str,
-    data: Dict[str, Any],
+    data: Any,
 ) -> List[Dict[str, Any]]:
     headers = _get_headers()
 
@@ -679,22 +590,45 @@ async def supabase_rest_post(
 
     url = _get_rest_url(table)
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            url,
-            headers=headers,
-            json=data,
+    timeout = httpx.Timeout(
+        connect=10.0,
+        read=30.0,
+        write=30.0,
+        pool=10.0,
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.post(
+                url,
+                headers=headers,
+                json=data,
+            )
+
+            response.raise_for_status()
+
+            result = response.json()
+
+            if isinstance(result, list):
+                return result
+
+            return []
+
+    except httpx.TimeoutException as exc:
+        logger.error(
+            "Supabase POST timeout for %s: %s",
+            table,
+            exc,
         )
+        raise
 
-        response.raise_for_status()
-
-        result = response.json()
-
-        if isinstance(result, list):
-            return result
-
-        return []
-
+    except Exception as exc:
+        logger.exception(
+            "Supabase POST failed for %s: %s",
+            table,
+            exc,
+        )
+        raise
 
 async def supabase_rest_patch(
     table: str,
@@ -713,22 +647,46 @@ async def supabase_rest_patch(
 
     url = _get_rest_url(table)
 
-    async with httpx.AsyncClient() as client:
-        response = await client.patch(
-            url,
-            headers=headers,
-            params=params,
-            json=data,
+    timeout = httpx.Timeout(
+        connect=10.0,
+        read=30.0,
+        write=30.0,
+        pool=10.0,
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.patch(
+                url,
+                headers=headers,
+                params=params,
+                json=data,
+            )
+
+            response.raise_for_status()
+
+            result = response.json()
+
+            if isinstance(result, list):
+                return result
+
+            return []
+
+    except httpx.TimeoutException as exc:
+        logger.error(
+            "Supabase PATCH timeout for %s: %s",
+            table,
+            exc,
         )
+        raise
 
-        response.raise_for_status()
-
-        result = response.json()
-
-        if isinstance(result, list):
-            return result
-
-        return []
+    except Exception as exc:
+        logger.exception(
+            "Supabase PATCH failed for %s: %s",
+            table,
+            exc,
+        )
+        raise
 
 # ============================================================
 # LLM USAGE
@@ -776,6 +734,120 @@ async def save_llm_usage(
         "llm_usage",
         [row],
     )
+async def get_user_llm_usage(
+    user_id: str,
+) -> List[Dict[str, Any]]:
+    """
+    Return all LLM usage records for a user.
+
+    The caller can aggregate platform and BYOK
+    usage independently using usage_source.
+    """
+
+    return await supabase_rest_get(
+        "llm_usage",
+        {
+            "user_id": f"eq.{user_id}",
+            "select": (
+                "id,"
+                "provider,"
+                "model,"
+                "feature,"
+                "usage_source,"
+                "input_tokens,"
+                "output_tokens,"
+                "total_tokens,"
+                "request_id,"
+                "created_at"
+            ),
+            "order": "created_at.desc",
+        },
+    )
+async def get_user_platform_token_usage(
+    user_id: str,
+) -> Dict[str, int]:
+    """
+    Aggregate platform-funded LLM token usage.
+
+    BYOK usage is deliberately excluded.
+    """
+
+    rows = await supabase_rest_get(
+        "llm_usage",
+        {
+            "user_id": f"eq.{user_id}",
+            "usage_source": "eq.platform",
+            "select": (
+                "input_tokens,"
+                "output_tokens,"
+                "total_tokens"
+            ),
+        },
+    )
+
+    input_tokens = sum(
+        int(row.get("input_tokens") or 0)
+        for row in rows
+    )
+
+    output_tokens = sum(
+        int(row.get("output_tokens") or 0)
+        for row in rows
+    )
+
+    total_tokens = sum(
+        int(row.get("total_tokens") or 0)
+        for row in rows
+    )
+
+    return {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+    }
+async def get_user_byok_token_usage(
+    user_id: str,
+) -> Dict[str, int]:
+    """
+    Aggregate BYOK token usage.
+
+    This is informational only and is not counted
+    against the SmartHire platform allowance.
+    """
+
+    rows = await supabase_rest_get(
+        "llm_usage",
+        {
+            "user_id": f"eq.{user_id}",
+            "usage_source": "eq.byok",
+            "select": (
+                "input_tokens,"
+                "output_tokens,"
+                "total_tokens"
+            ),
+        },
+    )
+
+    input_tokens = sum(
+        int(row.get("input_tokens") or 0)
+        for row in rows
+    )
+
+    output_tokens = sum(
+        int(row.get("output_tokens") or 0)
+        for row in rows
+    )
+
+    total_tokens = sum(
+        int(row.get("total_tokens") or 0)
+        for row in rows
+    )
+
+    return {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+    }
 # ============================================================
 # PHASE 7C — USER LLM CREDENTIALS
 # ============================================================

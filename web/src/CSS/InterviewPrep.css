@@ -1,0 +1,529 @@
+/* =========================================================
+   DAILY INTERVIEW QUESTIONS
+   Accent: #002a9d
+   ========================================================= */
+
+.daily-page {
+  min-height: 100vh;
+  padding: 2px 28px 60px;
+}
+
+.daily-container {
+  width: min(880px, 100%);
+  margin: 0 auto;
+}
+
+.daily-header {
+  margin-bottom: 22px;
+}
+
+.daily-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #002a9d;
+}
+
+.daily-header h1 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.2;
+  color: #172033;
+}
+
+.daily-header p {
+  max-width: 620px;
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.65;
+}
+
+/* =========================================================
+   DAILY NUDGE BANNER
+   ========================================================= */
+
+.daily-nudge-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 16px 18px;
+
+  border: 1px solid rgba(0, 42, 157, 0.12);
+  border-radius: 14px;
+
+  background:
+    radial-gradient(circle at 6% 40%, rgba(0, 42, 157, 0.08), transparent 40%),
+    linear-gradient(105deg, #f4f7ff 0%, #f8faff 45%, #ffffff 100%);
+
+  box-shadow: 0 8px 24px rgba(0, 42, 157, 0.05);
+}
+
+.daily-nudge-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+
+  border-radius: 10px;
+
+  background: rgba(0, 42, 157, 0.08);
+  color: #002a9d;
+}
+
+.daily-nudge-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.daily-nudge-content strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.daily-nudge-content span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+.daily-streak-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+
+  padding: 7px 12px;
+
+  border-radius: 999px;
+
+  background: #ffffff;
+  border: 1px solid rgba(0, 42, 157, 0.18);
+
+  color: #002a9d;
+
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   SECTIONS
+   ========================================================= */
+
+.daily-section {
+  margin-top: 18px;
+  padding: 22px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.045);
+}
+
+.daily-section-heading {
+  margin-bottom: 16px;
+}
+
+.daily-section-heading h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.daily-section-heading p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* =========================================================
+   GENERATOR FORM
+   ========================================================= */
+
+.daily-generator-form {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.daily-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.daily-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.daily-field input,
+.daily-field select {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 11px;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
+
+  background: #f8fafc;
+  color: #172033;
+
+  font-size: 12px;
+  box-sizing: border-box;
+
+  outline: none;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.daily-field input::placeholder {
+  color: #94a3b8;
+}
+
+.daily-field input:focus,
+.daily-field select:focus {
+  border-color: #002a9d;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 42, 157, 0.09);
+}
+
+.daily-select-wrapper {
+  position: relative;
+}
+
+.daily-select-wrapper select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 30px;
+  cursor: pointer;
+}
+
+.daily-select-caret {
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+}
+
+.daily-generate-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 38px;
+  padding: 0 16px;
+
+  border: 1px solid #002a9d;
+  border-radius: 8px;
+
+  background: #002a9d;
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.daily-generate-button:hover:not(:disabled) {
+  background: #001f75;
+  border-color: #001f75;
+}
+
+.daily-generate-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.daily-spin {
+  animation: daily-spin 0.9s linear infinite;
+}
+
+@keyframes daily-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.daily-empty-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 18px;
+
+  border: 1px dashed #dbe2ea;
+  border-radius: 12px;
+
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.daily-empty-state svg {
+  flex-shrink: 0;
+  color: #002a9d;
+}
+
+.daily-empty-state p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* =========================================================
+   QUESTION LIST
+   ========================================================= */
+
+.daily-question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+}
+
+.daily-question-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  padding: 14px 16px;
+
+  border: 1px solid #edf0f4;
+  border-radius: 12px;
+
+  background: #f8fafc;
+}
+
+.daily-question-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  width: 22px;
+  height: 22px;
+
+  border-radius: 999px;
+
+  background: rgba(0, 42, 157, 0.08);
+  color: #002a9d;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.daily-question-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.daily-question-body p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #172033;
+}
+
+.daily-question-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.daily-difficulty-pill {
+  display: inline-block;
+
+  padding: 3px 9px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.daily-answer-toggle {
+  border: none;
+  background: none;
+  padding: 0;
+
+  color: #002a9d;
+  font-size: 11px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.daily-answer-toggle:hover {
+  text-decoration: underline;
+}
+
+.daily-answer {
+  margin-top: 10px;
+  padding: 10px 12px;
+
+  border-left: 2px solid rgba(0, 42, 157, 0.35);
+  border-radius: 0 8px 8px 0;
+
+  background: rgba(0, 42, 157, 0.03);
+}
+
+.daily-answer p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.daily-difficulty-easy {
+  background: #e8f7ef;
+  color: #198754;
+}
+
+.daily-difficulty-medium {
+  background: #fef3e2;
+  color: #b7791f;
+}
+
+.daily-difficulty-hard {
+  background: #fdecec;
+  color: #c0392b;
+}
+
+/* =========================================================
+   MOCK INTERVIEWS — COMING SOON
+   ========================================================= */
+
+.daily-coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+
+  margin-top: 18px;
+  padding: 30px 24px;
+
+  border: 1px dashed rgba(0, 42, 157, 0.2);
+  border-radius: 14px;
+
+  background: rgba(0, 42, 157, 0.025);
+}
+
+.daily-coming-soon-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;
+  height: 44px;
+  margin-bottom: 6px;
+
+  border-radius: 12px;
+
+  background: rgba(0, 42, 157, 0.08);
+  color: #002a9d;
+}
+
+.daily-coming-soon strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.daily-coming-soon p {
+  max-width: 420px;
+  margin: 2px 0 6px;
+
+  font-size: 12px;
+  line-height: 1.6;
+  color: #64748b;
+}
+
+.daily-coming-soon-pill {
+  padding: 4px 11px;
+
+  border-radius: 999px;
+
+  background: #ffffff;
+  border: 1px solid rgba(0, 42, 157, 0.18);
+
+  color: #002a9d;
+
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 720px) {
+  .daily-generator-form {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-nudge-banner {
+    flex-wrap: wrap;
+  }
+
+  .daily-streak-pill {
+    margin-left: 54px;
+  }
+}
+
+@media (max-width: 560px) {
+  .daily-page {
+    padding: 95px 16px 40px;
+  }
+
+  .daily-section {
+    padding: 18px;
+  }
+
+  .daily-nudge-banner {
+    align-items: flex-start;
+  }
+
+  .daily-streak-pill {
+    margin-left: 0;
+  }
+}

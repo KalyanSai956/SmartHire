@@ -66,9 +66,13 @@ async def analyze_resume(
         description="Resume file — PDF or DOCX, max 5 MB",
     ),
     job_description: str = Form(
-        "",
-        description="Job description text (optional)",
-    ),
+    "",
+    description="Job description text (optional)",
+),
+    provider: str = Form(
+    "",
+    description="Optional LLM provider override.",
+),
     user_id: str = Depends(get_current_user),
 ):
       # ============================================================
@@ -312,12 +316,14 @@ async def analyze_resume(
             analyze_full_resume,
         )
 
-        result = analyze_full_resume(
-            resume_text=resume_text,
-            nlp=nlp,
-            embedder=embedder,
-            job_description=job_description,
-        )
+        result = await analyze_full_resume(
+    resume_text=resume_text,
+    nlp=nlp,
+    embedder=embedder,
+    job_description=job_description,
+    user_id=user_id,
+    provider=provider.strip() or None,
+)
 
     except Exception as exc:
 
@@ -327,9 +333,7 @@ async def analyze_resume(
 
         raise HTTPException(
             status_code=500,
-            detail=(
-                f"Analysis pipeline failed: {exc}"
-            ),
+            detail="SmartHire could not complete the analysis right now. Please try again in a few moments.",
         )
 
     # ============================================================
@@ -595,11 +599,43 @@ async def analyze_resume(
             history_result[
                 "jd_intelligence"
             ] = jd_intelligence.model_dump()
-        await save_analysis(
-            user_id,
-            filename,
-            history_result,
-        )
+        analysis_id = await save_analysis(
+    user_id,
+    filename,
+    history_result,
+)       # ============================================================
+# PHASE 2.2 — RESUME RAG INDEXING
+
+        try:
+
+            from backend.services.rag.resume_rag import (
+        index_resume,
+    )
+
+            rag_result = await index_resume(
+        user_id=user_id,
+        resume_name=filename,
+        resume_profile=resume_profile.model_dump(),
+        embedder=embedder,
+        source_analysis_id=analysis_id,
+    )
+
+            logger.info(
+        "Phase 2.2 Resume RAG indexing completed: %s",
+        rag_result,
+    )
+
+        except Exception as exc:
+
+            logger.exception(
+        "Phase 2.2 Resume RAG indexing failed "
+        "(non-blocking): %s",
+        exc,
+    )
+
+            warnings.append(
+        "Resume semantic indexing could not be completed."
+    )
 
     except Exception as exc:
 
@@ -653,9 +689,7 @@ async def get_history(
 
         raise HTTPException(
             status_code=500,
-            detail=(
-                f"Could not load history: {exc}"
-            ),
+            detail="SmartHire could not load your history right now. Please try again in a few moments.",
         )
 
 
@@ -702,7 +736,7 @@ async def delete_history_entry(
 
         raise HTTPException(
             status_code=500,
-            detail=f"Could not delete: {exc}",
+            detail="SmartHire could not delete this history item right now. Please try again in a few moments.",
         )
 
 
@@ -754,9 +788,7 @@ async def generate_pdf(
 
         raise HTTPException(
             status_code=500,
-            detail=(
-                f"Failed to generate PDF: {e}"
-            ),
+            detail="SmartHire could not generate the PDF right now. Please try again in a few moments.",
         )
 
 
@@ -829,7 +861,5 @@ async def generate_history_pdf(
 
         raise HTTPException(
             status_code=500,
-            detail=(
-                f"Failed to generate PDF: {e}"
-            ),
+            detail="SmartHire could not generate the PDF right now. Please try again in a few moments.",
         )

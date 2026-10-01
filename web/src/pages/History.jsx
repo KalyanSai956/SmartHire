@@ -128,8 +128,6 @@ export default function History() {
       <section className="page-heading">
         <div>
           <p className="eyebrow">ANALYSIS HISTORY</p>
-
-          <p>Review your previous resume analyses.</p>
         </div>
 
         <Link to="/analyze" className="button secondary">

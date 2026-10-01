@@ -15,7 +15,7 @@ export default function Navbar() {
   const links = [
     ["Dashboard", "/dashboard"],
     ["Resume ATS", "/analyze"],
-    ["Jobs", "/jobs"],
+    ["Resources", "/resources"],
   ];
 
   async function logout() {
@@ -29,7 +29,7 @@ export default function Navbar() {
 
   return (
     <header className="topbar">
-      <div className="topbar-inner">
+      <div className="mx-auto max-w-4xl px-1 py-2 topbar-inner">
         {/* LEFT — LOGO */}
         <Link to="/dashboard" className="brand" aria-label="SmartHire home">
           <img

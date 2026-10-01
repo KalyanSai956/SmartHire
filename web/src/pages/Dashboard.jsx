@@ -26,11 +26,11 @@ import {
   YAxis,
 } from "recharts";
 
-import { getHistory, getProfile } from "../services/api";
+import { getHistory, getProfile, getUsageQuota } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { getAtsScore, getJdMatch, normalizeHistory } from "../utils/analysis";
 
-import "../styles.css";
+import "../CSS/Dashboard.css";
 
 /* =========================================================
    SMALL COMPONENTS
@@ -196,6 +196,7 @@ export default function Dashboard() {
 
   const [profile, setProfile] = useState(null);
   const [history, setHistory] = useState([]);
+  const [usage, setUsage] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -217,9 +218,10 @@ export default function Dashboard() {
       setError("");
 
       try {
-        const [profileData, historyData] = await Promise.all([
+        const [profileData, historyData, usageData] = await Promise.all([
           getProfile(accessToken),
           getHistory(accessToken),
+          getUsageQuota(accessToken),
         ]);
 
         if (!active) {
@@ -228,6 +230,7 @@ export default function Dashboard() {
 
         setProfile(profileData);
         setHistory(normalizeHistory(historyData));
+        setUsage(usageData);
       } catch (err) {
         if (active) {
           setError(err?.message || "Could not load your career workspace.");
@@ -323,7 +326,7 @@ export default function Dashboard() {
      RENDER
      ===================================================== */
   return (
-    <div className="mx-auto max-w-4xl px-1 py-2 page-shell">
+    <div className="mx-auto max-w-8xl page-shell">
       {/* =================================================
           HERO / CAREER PROFILE
           ================================================= */}
@@ -440,7 +443,82 @@ export default function Dashboard() {
           // icon={TrendingUp}
         />
       </section>
+      {/* =================================================
+    AI USAGE
+    ================================================= */}
 
+      {usage && (
+        <section className="panel ai-usage-dashboard-panel">
+          <div className="panel-header">
+            <Link to="/settings" className="outline-button">
+              AI Settings
+              <ArrowRight size={15} />
+            </Link>
+          </div>
+
+          <div className="ai-usage-dashboard-grid">
+            <div className="ai-usage-stat">
+              <span>Resume analyses</span>
+
+              <strong>
+                {usage.resume.used}
+                <small>/{usage.resume.limit}</small>
+              </strong>
+
+              <p>{usage.resume.remaining} remaining</p>
+            </div>
+
+            <div className="ai-usage-stat">
+              <span>Platform tokens</span>
+
+              <strong>
+                {Number(usage.tokens?.used || 0).toLocaleString()}
+
+                <small>
+                  /{Number(usage.tokens?.limit || 0).toLocaleString()}
+                </small>
+              </strong>
+
+              <p>
+                {Number(usage.tokens?.remaining || 0).toLocaleString()}{" "}
+                remaining
+              </p>
+            </div>
+
+            <div className="ai-usage-stat">
+              <span>Input tokens</span>
+
+              <strong>
+                {Number(usage.tokens?.input_tokens || 0).toLocaleString()}
+              </strong>
+
+              <p>Platform usage</p>
+            </div>
+
+            <div className="ai-usage-stat">
+              <span>Output tokens</span>
+
+              <strong>
+                {Number(usage.tokens?.output_tokens || 0).toLocaleString()}
+              </strong>
+
+              <p>Platform usage</p>
+            </div>
+          </div>
+
+          {usage.byok?.connected && (
+            <div className="byok-dashboard-note">
+              <strong>BYOK active</strong>
+
+              <span>
+                {usage.byok.providers.length} provider
+                {usage.byok.providers.length !== 1 ? "s" : ""} connected. BYOK
+                usage is not deducted from your platform allowance.
+              </span>
+            </div>
+          )}
+        </section>
+      )}
       {/* =================================================
           MAIN GRID
           ================================================= */}

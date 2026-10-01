@@ -4,13 +4,20 @@ import logging
 from dataclasses import dataclass
 from typing import Literal
 
+from backend.core.config import (
+    PLATFORM_AI_TOKEN_LIMIT,
+)
+
 from backend.database.supabase_db import (
     count_user_resume_analyses,
     get_user_llm_credentials,
+    get_user_platform_token_usage,
 )
 
 
-logger = logging.getLogger("smarthire.llm.quota")
+logger = logging.getLogger(
+    "smarthire.llm.quota"
+)
 
 
 # ============================================================
@@ -18,6 +25,10 @@ logger = logging.getLogger("smarthire.llm.quota")
 # ============================================================
 
 FREE_RESUME_ANALYSES = 3
+
+PLATFORM_TOKEN_LIMIT = (
+    PLATFORM_AI_TOKEN_LIMIT
+)
 
 
 QuotaFeature = Literal[
@@ -30,9 +41,6 @@ QuotaFeature = Literal[
 # ============================================================
 
 class FreeQuotaExceededError(Exception):
-    """
-    Raised when a user has exhausted the free platform quota.
-    """
 
     def __init__(
         self,
@@ -56,12 +64,14 @@ class FreeQuotaExceededError(Exception):
 
 @dataclass
 class QuotaStatus:
+
     feature: QuotaFeature
     used: int
     limit: int
 
     @property
     def remaining(self) -> int:
+
         return max(
             self.limit - self.used,
             0,
@@ -69,9 +79,11 @@ class QuotaStatus:
 
     @property
     def exhausted(self) -> bool:
+
         return self.used >= self.limit
 
     def to_dict(self) -> dict:
+
         return {
             "feature": self.feature,
             "used": self.used,
@@ -82,7 +94,45 @@ class QuotaStatus:
 
 
 # ============================================================
-# CHECK WHETHER USER HAS BYOK
+# TOKEN QUOTA
+# ============================================================
+
+@dataclass
+class TokenQuotaStatus:
+
+    used: int
+    limit: int
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+    @property
+    def remaining(self) -> int:
+
+        return max(
+            self.limit - self.used,
+            0,
+        )
+
+    @property
+    def exhausted(self) -> bool:
+
+        return self.used >= self.limit
+
+    def to_dict(self) -> dict:
+
+        return {
+            "used": self.used,
+            "limit": self.limit,
+            "remaining": self.remaining,
+            "input_tokens": self.input_tokens,
+            "output_tokens": self.output_tokens,
+            "exhausted": self.exhausted,
+        }
+
+
+# ============================================================
+# BYOK
 # ============================================================
 
 async def user_has_byok(
@@ -97,7 +147,7 @@ async def user_has_byok(
 
 
 # ============================================================
-# GET QUOTA STATUS
+# RESUME QUOTA
 # ============================================================
 
 async def get_quota_status(
@@ -127,6 +177,26 @@ async def get_quota_status(
 
 
 # ============================================================
+# PLATFORM TOKEN QUOTA
+# ============================================================
+
+async def get_token_quota_status(
+    user_id: str,
+) -> TokenQuotaStatus:
+
+    usage = await get_user_platform_token_usage(
+        user_id
+    )
+
+    return TokenQuotaStatus(
+        used=usage["total_tokens"],
+        limit=PLATFORM_TOKEN_LIMIT,
+        input_tokens=usage["input_tokens"],
+        output_tokens=usage["output_tokens"],
+    )
+
+
+# ============================================================
 # REQUIRE FREE QUOTA
 # ============================================================
 
@@ -141,7 +211,8 @@ async def require_free_quota(
     )
 
     logger.info(
-        "Quota check user=%s feature=%s used=%s limit=%s remaining=%s",
+        "Quota check user=%s feature=%s "
+        "used=%s limit=%s remaining=%s",
         user_id,
         feature,
         quota.used,
@@ -169,11 +240,6 @@ async def require_free_quota_or_byok(
     feature: QuotaFeature,
 ) -> QuotaStatus:
 
-    # --------------------------------------------------------
-    # If the user has ANY configured BYOK provider,
-    # they are allowed to continue even after free quota.
-    # --------------------------------------------------------
-
     if await user_has_byok(user_id):
 
         logger.info(
@@ -187,10 +253,6 @@ async def require_free_quota_or_byok(
             user_id=user_id,
             feature=feature,
         )
-
-    # --------------------------------------------------------
-    # No BYOK → enforce the 3-use platform quota.
-    # --------------------------------------------------------
 
     return await require_free_quota(
         user_id=user_id,

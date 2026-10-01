@@ -1,0 +1,384 @@
+/* =========================================================
+   SMARTHIRE · ONBOARDING  (startup / product style)
+   Import:  import "../styles/onboarding.css";
+   Root wrapper:  className="onboarding-page"
+   Logo + step counter live INSIDE the card (see JSX notes).
+   ========================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+.onboarding-page,
+.route-loader {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f6f7f9;
+  --line: #e6e8ec;
+  --line-strong: #d5d9e0;
+  --ink: #0b1220;
+  --ink-2: #4b5565;
+  --ink-3: #8a93a3;
+
+  --accent: #2563eb;
+  --accent-soft: #eff4ff;
+  --accent-line: #c7d7fe;
+  --red-text: #b42318;
+  --red-soft: #fef3f2;
+  --red-line: #fecdca;
+
+  --r-lg: 14px;
+  --r-md: 8px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 32px -16px rgba(16, 24, 40, 0.14);
+
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.onboarding-page *,
+.onboarding-page *::before,
+.onboarding-page *::after { box-sizing: border-box; }
+
+.onboarding-page h2,
+.onboarding-page p { margin: 0; }
+
+/* ---------- Page: no top bar, card centred ---------- */
+.onboarding-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: var(--bg);
+}
+
+.onboarding-content { width: 100%; max-width: 620px; }
+
+.onboarding-page button:focus-visible,
+.onboarding-page input:focus-visible,
+.onboarding-page .resume-upload-box:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Card ---------- */
+.onboarding-card {
+  padding: 28px 32px 28px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+
+.onboarding-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.brand-logo { display: block; height: 28px; width: auto; }
+
+.onboarding-step {
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.onboarding-progress {
+  height: 4px;
+  margin-bottom: 26px;
+  overflow: hidden;
+  background: var(--line);
+  border-radius: 999px;
+}
+
+.onboarding-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.onboarding-header { margin-bottom: 20px; }
+
+.onboarding-page .eyebrow {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  text-transform: capitalize;
+}
+
+/* ---------- Section ---------- */
+.onboarding-section { display: flex; flex-direction: column; gap: 14px; }
+
+.onboarding-section h2 {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.onboarding-section > p { margin-top: -6px; font-size: 14px; color: var(--ink-2); }
+
+.onboarding-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+/* ---------- Fields ---------- */
+.auth-field { display: flex; flex-direction: column; gap: 6px; }
+
+.auth-field > span { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+
+.auth-field input,
+.tag-input input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.auth-field input::placeholder,
+.tag-input input::placeholder { color: var(--ink-3); }
+
+.auth-field input:focus,
+.tag-input input:focus {
+  outline: 0;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.tag-input { display: flex; gap: 8px; }
+.tag-input input { flex: 1; min-width: 0; }
+
+/* ---------- Buttons ---------- */
+.onboarding-page .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.onboarding-page .button.secondary {
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+}
+
+.onboarding-page .button.secondary:hover:not(:disabled) { background: var(--surface-2); border-color: var(--ink-3); }
+
+.onboarding-page .button.primary {
+  color: #fff;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+}
+
+.onboarding-page .button.primary:hover:not(:disabled) { background: #1f2a3d; }
+.onboarding-page .button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ---------- Suggestion chips + tags ---------- */
+.suggestion-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.suggestion-chip {
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.suggestion-chip:hover { color: var(--ink); background: var(--surface-2); }
+
+.suggestion-chip.selected {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.onboarding-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.onboarding-tags:empty { display: none; }
+
+.onboarding-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px 3px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.onboarding-tag button {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: var(--ink-3);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.onboarding-tag button:hover { color: var(--red-text); background: var(--red-soft); }
+
+/* ---------- Experience options ---------- */
+.experience-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+.experience-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.experience-option:hover { background: var(--surface-2); }
+
+.experience-option.selected {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* ---------- Resume upload ---------- */
+.resume-upload-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 190px;
+  padding: 24px;
+  text-align: center;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.resume-upload-box:hover { border-color: var(--ink-3); background: var(--surface-2); }
+
+.resume-upload-box svg { color: var(--ink-2); }
+
+.resume-upload-box strong {
+  max-width: 100%;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.resume-upload-box span { font-size: 13px; color: var(--ink-3); }
+
+/* ---------- Error + actions ---------- */
+.onboarding-error {
+  margin-top: 18px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: var(--red-text);
+  background: var(--red-soft);
+  border: 1px solid var(--red-line);
+  border-left: 3px solid #dc2626;
+  border-radius: var(--r-md);
+}
+
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- Route loader ---------- */
+.route-loader {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--bg);
+}
+
+.route-loader .loading-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  border-top-color: var(--ink);
+  animation: onb-spin 0.7s linear infinite;
+}
+
+@keyframes onb-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 560px) {
+  .onboarding-page { align-items: flex-start; padding: 16px 12px; }
+  .onboarding-card { padding: 20px 18px; }
+  .onboarding-section h2 { font-size: 20px; }
+  .experience-options { grid-template-columns: 1fr; }
+  .tag-input { flex-direction: column; }
+  .tag-input .button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-page *, .route-loader * { animation: none !important; transition: none !important; }
+}

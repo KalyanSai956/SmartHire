@@ -8,15 +8,22 @@ from backend.services.feedback_engine import analyze_issues, generate_issues_sum
 from backend.services.ats_scorer import calculate_overall_score, validate_skills_with_projects
 
 
-def analyze_full_resume(
+async def analyze_full_resume(
     resume_text: str,
     nlp: spacy.Language,
     embedder: SentenceTransformer,
     job_description: Optional[str] = None,
+    *,
+    user_id: str,
+    provider: Optional[str] = None,
 ) -> Dict:
     import logging
     logger = logging.getLogger('ats_resume_scorer')
-    parsed_resume = parse_resume(resume_text)
+    parsed_resume = await parse_resume(
+    resume_text,
+    user_id=user_id,
+    provider=provider,
+)
     logger.info(f"Groq parsed summary: {parsed_resume.get('professional_summary', '')[:100]!r}")
     logger.info(f"Groq parsed skills count: {len(parsed_resume.get('skills', []))}")
     logger.info(f"Groq parsed experience count: {len(parsed_resume.get('experience', []))}")
@@ -49,7 +56,11 @@ def analyze_full_resume(
     jd_comparison_result = None
     jd_keywords = None
     if job_description and job_description.strip():
-        parsed_jd = parse_job_description(job_description.strip())
+        parsed_jd = await parse_job_description(
+    job_description.strip(),
+    user_id=user_id,
+    provider=provider,
+)
         jd_keywords = list(set(
             parsed_jd.get('keywords', []) +
             parsed_jd.get('required_skills', []) +

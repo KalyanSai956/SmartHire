@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
+import httpx
+
 from cryptography.fernet import (
     Fernet,
     InvalidToken,
@@ -167,3 +169,72 @@ def get_last4(
         if len(api_key) >= 4
         else api_key
     )
+
+async def validate_api_key(
+    provider: str,
+    api_key: str,
+    model: str | None = None,
+) -> tuple[bool, str]:
+    provider = validate_provider(provider)
+    api_key = (api_key or "").strip()
+
+    if not api_key:
+        return False, "API key cannot be empty."
+
+    timeout = httpx.Timeout(connect=10, read=20, write=20, pool=10)
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            if provider == "openai":
+                response = await client.get(
+                    "https://api.openai.com/v1/models",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    params={"limit": "1"},
+                )
+            elif provider == "groq":
+                response = await client.get(
+                    "https://api.groq.com/openai/v1/models",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                )
+            elif provider == "anthropic":
+                response = await client.get(
+                    "https://api.anthropic.com/v1/models",
+                    headers={
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                    },
+                )
+            elif provider == "google":
+                response = await client.get(
+                    "https://generativelanguage.googleapis.com/v1beta/models",
+                    headers={"x-goog-api-key": api_key},
+                    params={"pageSize": "1"},
+                )
+            else:
+                return False, "Unsupported provider."
+    except httpx.TimeoutException:
+        return False, "The provider did not respond in time. Please try again."
+    except httpx.RequestError:
+        return False, "Could not reach the AI provider. Please try again."
+
+    if response.status_code in {401, 403}:
+        return False, "The API key is invalid or unauthorized."
+
+    if response.status_code == 429:
+        return False, "The API key is valid, but the provider rate limit was reached."
+
+    if response.status_code >= 400:
+        return False, "The API key could not be verified with this provider."
+
+    try:
+        payload = response.json()
+    except ValueError:
+        return False, "The provider returned an invalid validation response."
+
+    if provider == "google" and not payload.get("models"):
+        return False, "The API key did not return any available Gemini models."
+
+    if provider in {"openai", "groq", "anthropic"} and not payload.get("data"):
+        return False, "The API key did not return any available models."
+
+    return True, "API key verified successfully."
