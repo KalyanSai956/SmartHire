@@ -60,43 +60,117 @@ def extract_job_experience_range(
     classified_level: str | None = None,
     source_level: str | None = None,
 ) -> tuple[float, float | None]:
-    text = f"{title}\n{description}\n{source_level or ''}".lower()
+    """
+    Determine the minimum experience required by a job.
 
-    range_patterns = (
-        r"(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)",
-        r"(\d+(?:\.\d+)?)\s*\+\s*(?:years?|yrs?)",
-        r"minimum\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*(?:years?|yrs?)",
-        r"at\s+least\s+(\d+(?:\.\d+)?)\s*(?:years?|yrs?)",
-        r"(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\s+(?:of\s+)?experience",
+    Priority:
+    1. Explicit classified experience level
+    2. Source experience level
+    3. Explicit years in title/description
+
+    The classified/source level must take precedence over arbitrary
+    year mentions inside a job description. For example, an internship
+    description may mention experience requirements for preferred
+    qualifications, but an explicitly classified 'intern' job should
+    remain compatible with a fresher.
+    """
+
+    # ---------------------------------------------------------
+    # 1. Explicit classified experience level
+    # ---------------------------------------------------------
+
+    classified = normalize_experience(
+        classified_level
     )
 
-    for pattern in range_patterns:
-        match = re.search(pattern, text, flags=re.IGNORECASE)
-        if not match:
-            continue
-        if "to" in pattern or "-" in pattern:
-            return float(match.group(1)), float(match.group(2))
-        years = float(match.group(1))
-        return years, None
-
-    level = normalize_experience(classified_level or source_level)
-    level_minimums = {
+    explicit_level_minimums = {
         "intern": 0.0,
+        "internship": 0.0,
+        "student": 0.0,
         "fresher": 0.0,
         "entry": 0.0,
+        "entry level": 0.0,
+        "entry-level": 0.0,
         "junior": 0.0,
+
         "mid": 2.0,
+        "intermediate": 2.0,
+
         "senior": 5.0,
         "lead": 7.0,
         "manager": 5.0,
         "director": 10.0,
     }
 
-    if level in level_minimums:
-        return level_minimums[level], None
+    if classified in explicit_level_minimums:
+        return explicit_level_minimums[classified], None
+
+    # ---------------------------------------------------------
+    # 2. Source experience level
+    # ---------------------------------------------------------
+
+    source = normalize_experience(
+        source_level
+    )
+
+    if source in explicit_level_minimums:
+        return explicit_level_minimums[source], None
+
+    # ---------------------------------------------------------
+    # 3. Only if no explicit level exists, inspect text
+    # ---------------------------------------------------------
+
+    text = (
+        f"{title}\n"
+        f"{description}"
+    ).lower()
+
+    range_patterns = (
+        r"(\d+(?:\.\d+)?)\s*(?:-|to)\s*"
+        r"(\d+(?:\.\d+)?)\s*(?:years?|yrs?)",
+
+        r"(\d+(?:\.\d+)?)\s*\+\s*"
+        r"(?:years?|yrs?)",
+
+        r"minimum\s+(?:of\s+)?"
+        r"(\d+(?:\.\d+)?)\s*(?:years?|yrs?)",
+
+        r"at\s+least\s+"
+        r"(\d+(?:\.\d+)?)\s*(?:years?|yrs?)",
+
+        r"(\d+(?:\.\d+)?)\s*"
+        r"(?:years?|yrs?)\s+"
+        r"(?:of\s+)?experience",
+    )
+
+    for pattern in range_patterns:
+
+        match = re.search(
+            pattern,
+            text,
+            flags=re.IGNORECASE,
+        )
+
+        if not match:
+            continue
+
+        # Range: 1-2 years / 1 to 2 years
+        if len(match.groups()) >= 2:
+            return (
+                float(match.group(1)),
+                float(match.group(2)),
+            )
+
+        # Minimum: 2+ years / at least 2 years
+        years = float(match.group(1))
+
+        return years, None
+
+    # ---------------------------------------------------------
+    # 4. Unknown
+    # ---------------------------------------------------------
 
     return 0.0, None
-
 
 def experience_compatible(
     profile_experience: Any,

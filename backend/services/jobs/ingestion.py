@@ -144,7 +144,7 @@ async def classify_source_jobs(
 
     return await classify_jobs(
         jobs=jobs,
-        force=False,
+        force=True,
     )
 
 

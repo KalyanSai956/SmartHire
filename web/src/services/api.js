@@ -615,3 +615,44 @@ export async function removeSavedJob(
     },
   );
 }
+export async function getAdminOverview(token) {
+  return request("/api/v1/admin/overview", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function getAdminUsers(token) {
+  return request("/api/v1/admin/users", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function getAdminJobs(token) {
+  return request("/api/v1/admin/jobs", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function getAdminSources(token) {
+  return request("/api/v1/admin/sources", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function getAdminEmbeddings(token) {
+  return request("/api/v1/admin/embeddings", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function getAdminLLMUsage(token) {
+  return request("/api/v1/admin/llm-usage", {
+    method: "GET",
+    token,
+  });
+}

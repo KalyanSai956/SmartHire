@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { ArrowRight, LockKeyhole, Mail, UserRound, X } from "lucide-react";
+
 import { useAuth } from "../context/AuthContext";
+
 function isValidGmail(email) {
   const value = email.trim().toLowerCase();
 
@@ -40,7 +43,11 @@ function getAuthErrorMessage(error, isLogin) {
     return "Too many attempts. Please wait a moment and try again.";
   }
 
-  if (message.includes("network")) {
+  if (
+    message.includes("network") ||
+    message.includes("fetch") ||
+    message.includes("failed to fetch")
+  ) {
     return "Network error. Please check your internet connection and try again.";
   }
 
@@ -69,6 +76,9 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  /*
+   * Lock page scrolling while the authentication modal is open.
+   */
   useEffect(() => {
     document.body.style.overflow = "hidden";
 
@@ -77,17 +87,27 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
     };
   }, []);
 
+  /*
+   * Clear messages when switching between Login and Signup.
+   */
   useEffect(() => {
     setError("");
     setSuccess("");
   }, [mode]);
 
+  /*
+   * Update form fields.
+   */
   function update(key, value) {
     setForm((current) => ({
       ...current,
       [key]: value,
     }));
 
+    /*
+     * Remove the previous error as soon as the user starts
+     * correcting the form.
+     */
     if (error) {
       setError("");
     }
@@ -97,18 +117,34 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
     }
   }
 
+  /*
+   * Close modal when clicking the backdrop.
+   *
+   * Do not allow closing while an authentication request
+   * is currently running.
+   */
   function closeOnBackdrop(event) {
     if (event.target === event.currentTarget && !busy) {
       onClose();
     }
   }
 
+  /*
+   * Submit login/signup form.
+   */
   async function submit(event) {
     event.preventDefault();
 
+    /*
+     * Always clear previous messages before starting
+     * a new authentication attempt.
+     */
     setError("");
     setSuccess("");
 
+    /*
+     * Authentication configuration check.
+     */
     if (!configured) {
       setError(
         "SmartHire authentication is not configured. Please check your environment settings.",
@@ -116,6 +152,9 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
       return;
     }
 
+    /*
+     * Signup-only validation.
+     */
     if (!isLogin) {
       const fullName = form.fullName.trim();
 
@@ -130,6 +169,9 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
       }
     }
 
+    /*
+     * Common email validation.
+     */
     const email = form.email.trim().toLowerCase();
 
     if (!email) {
@@ -142,6 +184,9 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
       return;
     }
 
+    /*
+     * Common password validation.
+     */
     if (!form.password) {
       setError("Please enter your password.");
       return;
@@ -152,6 +197,9 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
       return;
     }
 
+    /*
+     * Signup password confirmation.
+     */
     if (!isLogin) {
       if (!form.confirmPassword) {
         setError("Please confirm your password.");
@@ -164,21 +212,42 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
       }
     }
 
+    /*
+     * Start authentication request.
+     *
+     * IMPORTANT:
+     * We only use busy for the button state.
+     *
+     * There is NO full-screen HI logo anymore.
+     */
     setBusy(true);
 
     try {
+      /*
+       * ==========================
+       * LOGIN
+       * ==========================
+       */
       if (isLogin) {
         const { data } = await signIn(email, form.password);
 
+        /*
+         * Supabase should return a session after
+         * successful password authentication.
+         */
         if (!data?.session) {
           setBusy(false);
           setError("Unable to create a login session. Please try again.");
           return;
         }
 
-        // Keep the SmartHire logo loading screen visible for 5 seconds.
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-
+        /*
+         * Authentication succeeded.
+         *
+         * Close the modal first, then navigate immediately.
+         *
+         * There is intentionally NO artificial delay here.
+         */
         onClose();
 
         navigate("/dashboard", {
@@ -188,8 +257,17 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
         return;
       }
 
+      /*
+       * ==========================
+       * SIGNUP
+       * ==========================
+       */
       const { data } = await signUp(email, form.password, form.fullName.trim());
 
+      /*
+       * Supabase signup without a session usually means
+       * email confirmation is enabled.
+       */
       if (!data?.session) {
         setBusy(false);
 
@@ -200,15 +278,23 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
         return;
       }
 
-      // Keep the SmartHire logo loading screen visible for 5 seconds.
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-
+      /*
+       * Signup succeeded.
+       *
+       * Go directly to onboarding.
+       */
       onClose();
 
       navigate("/onboarding", {
         replace: true,
       });
     } catch (authError) {
+      /*
+       * IMPORTANT:
+       *
+       * A failed login never navigates anywhere.
+       * The modal stays open and the error is shown here.
+       */
       console.error("Authentication error:", authError);
 
       setBusy(false);
@@ -218,210 +304,216 @@ export default function AuthModal({ mode = "login", onClose, onModeChange }) {
   }
 
   return (
-    <>
-      {/* =====================================================
-          SMART HIRE LOADING SCREEN
-          ===================================================== */}
+    <div className="auth-modal-overlay" onMouseDown={closeOnBackdrop}>
+      <div
+        className="auth-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+      >
+        {/* CLOSE */}
 
-      {busy && (
-        <div
-          className="auth-loading-screen"
-          aria-label="Loading SmartHire"
-          role="status"
+        <button
+          type="button"
+          className="auth-modal-close"
+          onClick={onClose}
+          disabled={busy}
+          aria-label="Close"
         >
-          <img
-            src="/hi-logo-nav.svg"
-            alt="SmartHire"
-            className="auth-loading-logo"
-          />
-        </div>
-      )}
+          <X size={18} />
+        </button>
 
-      {/* =====================================================
-          AUTH MODAL
-          ===================================================== */}
+        {/* AUTH CONTENT */}
 
-      <div className="auth-modal-overlay" onMouseDown={closeOnBackdrop}>
-        <div
-          className="auth-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="auth-modal-title"
-        >
-          {/* CLOSE */}
+        <div className="auth-modal-content">
+          {/* BRAND */}
 
-          <button
-            type="button"
-            className="auth-modal-close"
-            onClick={onClose}
-            disabled={busy}
-            aria-label="Close"
-          >
-            <X size={18} />
-          </button>
+          <div className="auth-modal-brand">
+            <img
+              src="/hi-logo-nav.svg"
+              alt="SmartHire"
+              width="160"
+              height="26"
+            />
+          </div>
 
-          {/* CENTERED AUTH CONTENT */}
+          {/* HEADER */}
 
-          <div className="auth-modal-content">
-            {/* BRAND */}
+          <div className="auth-modal-header">
+            <h2 id="auth-modal-title">
+              {isLogin ? "Sign in" : "Create your account"}
+            </h2>
 
-            <div className="auth-modal-brand">
-              <img
-                src="/hi-logo-nav.svg"
-                alt="SmartHire"
-                width="160"
-                height="26"
-              />
-            </div>
+            <p className="auth-modal-subtitle">
+              {isLogin
+                ? "Welcome back! Enter your details to continue."
+                : "Start analyzing your resume in seconds."}
+            </p>
+          </div>
 
-            <div className="auth-modal-header">
-              <h2 id="auth-modal-title">
-                {isLogin ? "Sign in" : "Create your account"}
-              </h2>
+          {/* FORM */}
 
-              <p className="auth-modal-subtitle">
-                {isLogin
-                  ? "Welcome back! Enter your details to continue."
-                  : "Start analyzing your resume in seconds."}
-              </p>
-            </div>
+          <form onSubmit={submit}>
+            {/* FULL NAME — SIGNUP ONLY */}
 
-            {/* FORM */}
-
-            <form onSubmit={submit}>
-              {!isLogin && (
-                <label className="auth-modal-field">
-                  <span>Full name</span>
-
-                  <div>
-                    <UserRound size={16} />
-
-                    <input
-                      type="text"
-                      value={form.fullName}
-                      onChange={(e) => update("fullName", e.target.value)}
-                      placeholder="Your full name"
-                      autoComplete="name"
-                      required
-                    />
-                  </div>
-                </label>
-              )}
-
+            {!isLogin && (
               <label className="auth-modal-field">
-                <span>Email</span>
+                <span>Full name</span>
 
                 <div>
-                  <Mail size={16} />
+                  <UserRound size={16} />
 
                   <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => update("email", e.target.value)}
-                    placeholder="you@gmail.com"
-                    autoComplete="email"
+                    type="text"
+                    value={form.fullName}
+                    onChange={(e) => update("fullName", e.target.value)}
+                    placeholder="Your full name"
+                    autoComplete="name"
                     required
+                    disabled={busy}
                   />
                 </div>
-
-                {!isLogin && (
-                  <small className="auth-modal-field-hint">
-                    Please use a Gmail address.
-                  </small>
-                )}
               </label>
+            )}
 
+            {/* EMAIL */}
+
+            <label className="auth-modal-field">
+              <span>Email</span>
+
+              <div>
+                <Mail size={16} />
+
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => update("email", e.target.value)}
+                  placeholder="you@gmail.com"
+                  autoComplete="email"
+                  required
+                  disabled={busy}
+                />
+              </div>
+
+              {!isLogin && (
+                <small className="auth-modal-field-hint">
+                  Please use a Gmail address.
+                </small>
+              )}
+            </label>
+
+            {/* PASSWORD */}
+
+            <label className="auth-modal-field">
+              <span>Password</span>
+
+              <div>
+                <LockKeyhole size={16} />
+
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => update("password", e.target.value)}
+                  placeholder={
+                    isLogin ? "Your password" : "At least 6 characters"
+                  }
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  required
+                  disabled={busy}
+                />
+              </div>
+            </label>
+
+            {/* CONFIRM PASSWORD — SIGNUP ONLY */}
+
+            {!isLogin && (
               <label className="auth-modal-field">
-                <span>Password</span>
+                <span>Confirm password</span>
 
                 <div>
                   <LockKeyhole size={16} />
 
                   <input
                     type="password"
-                    value={form.password}
-                    onChange={(e) => update("password", e.target.value)}
-                    placeholder={
-                      isLogin ? "Your password" : "At least 6 characters"
-                    }
-                    autoComplete={isLogin ? "current-password" : "new-password"}
+                    value={form.confirmPassword}
+                    onChange={(e) => update("confirmPassword", e.target.value)}
+                    placeholder="Repeat your password"
+                    autoComplete="new-password"
                     required
+                    disabled={busy}
                   />
                 </div>
               </label>
+            )}
 
-              {!isLogin && (
-                <label className="auth-modal-field">
-                  <span>Confirm password</span>
+            {/* ERROR */}
 
-                  <div>
-                    <LockKeyhole size={16} />
-
-                    <input
-                      type="password"
-                      value={form.confirmPassword}
-                      onChange={(e) =>
-                        update("confirmPassword", e.target.value)
-                      }
-                      placeholder="Repeat your password"
-                      autoComplete="new-password"
-                      required
-                    />
-                  </div>
-                </label>
-              )}
-
-              {error && (
-                <div className="auth-modal-error" role="alert">
-                  {error}
-                </div>
-              )}
-
-              {success && (
-                <div className="auth-modal-success" role="status">
-                  {success}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="auth-modal-submit"
-                disabled={busy}
+            {error && (
+              <div
+                className="auth-modal-error"
+                role="alert"
+                aria-live="assertive"
               >
-                {busy
-                  ? isLogin
-                    ? "Signing in..."
-                    : "Creating account..."
-                  : isLogin
-                    ? "Sign in"
-                    : "Create account"}
+                {error}
+              </div>
+            )}
 
-                <ArrowRight size={16} />
-              </button>
-            </form>
+            {/* SUCCESS */}
 
-            {/* SWITCH */}
+            {success && (
+              <div
+                className="auth-modal-success"
+                role="status"
+                aria-live="polite"
+              >
+                {success}
+              </div>
+            )}
 
-            <div className="auth-modal-switch">
-              {isLogin ? (
-                <>
-                  Don't have an account?
-                  <button type="button" onClick={() => onModeChange("signup")}>
-                    Create one
-                  </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?
-                  <button type="button" onClick={() => onModeChange("login")}>
-                    Sign in
-                  </button>
-                </>
-              )}
-            </div>
+            {/* SUBMIT */}
+
+            <button type="submit" className="auth-modal-submit" disabled={busy}>
+              {busy
+                ? isLogin
+                  ? "Signing in..."
+                  : "Creating account..."
+                : isLogin
+                  ? "Sign in"
+                  : "Create account"}
+
+              <ArrowRight size={16} />
+            </button>
+          </form>
+
+          {/* SWITCH LOGIN / SIGNUP */}
+
+          <div className="auth-modal-switch">
+            {isLogin ? (
+              <>
+                Don't have an account?
+                <button
+                  type="button"
+                  onClick={() => onModeChange("signup")}
+                  disabled={busy}
+                >
+                  Create one
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?
+                <button
+                  type="button"
+                  onClick={() => onModeChange("login")}
+                  disabled={busy}
+                >
+                  Sign in
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

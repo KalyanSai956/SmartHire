@@ -1761,8 +1761,6 @@ export default function Analysis() {
           <div className="analysis-card-header">
             <div>
               <span className="section-kicker">GRAMMAR & SPELLING</span>
-
-              <h2>Grammar & Spelling Analysis</h2>
             </div>
 
             <span
@@ -1839,8 +1837,6 @@ export default function Analysis() {
           <div className="analysis-card-header">
             <div>
               <span className="section-kicker">ATS COMPATIBILITY</span>
-
-              <h2>ATS Compatibility</h2>
             </div>
 
             <span
@@ -1862,7 +1858,7 @@ export default function Analysis() {
 
           <div className="compatibility-score">
             <div>
-              <span>ATS Compatibility Score</span>
+              <span>Score</span>
 
               <strong>{data.atsCompatibilityScore}/15</strong>
             </div>

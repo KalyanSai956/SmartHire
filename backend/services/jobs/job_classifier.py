@@ -50,7 +50,7 @@ from backend.services.jobs.role_taxonomy import (
 # VERSION
 # ============================================================
 
-CLASSIFICATION_VERSION = 2
+CLASSIFICATION_VERSION = 3
 
 
 # ============================================================
@@ -155,7 +155,6 @@ def _unique(values: Iterable[str]) -> list[str]:
 # ============================================================
 # EXPERIENCE CLASSIFICATION
 # ============================================================
-
 def classify_experience(
     title: str,
     description: str = "",
@@ -164,71 +163,38 @@ def classify_experience(
 
     title_text = _normalize(title)
     description_text = _normalize(description)
+    source = _normalize(source_experience_level or "")
 
     # --------------------------------------------------------
-    # 1. Explicit entry/fresher signals have highest priority
+    # 1. Explicit fresher / entry-level signals
     # --------------------------------------------------------
 
-    if re.search(
+    entry_pattern = (
         r"\b(entry[\s-]?level|fresher|graduate|new grad|"
-        r"early career|campus hire)\b",
-        title_text,
-    ):
+        r"early career|campus hire)\b"
+    )
+
+    if re.search(entry_pattern, title_text):
         return "entry"
 
-    if re.search(
-        r"\b(entry[\s-]?level|fresher|graduate|new grad|"
-        r"early career|campus hire)\b",
-        description_text,
-    ):
+    if re.search(entry_pattern, description_text):
         return "entry"
 
     # --------------------------------------------------------
-    # 2. Internship
+    # 2. Explicit internship in TITLE
+    #
+    # Title is a strong signal:
+    # "Software Engineer Intern" -> intern
     # --------------------------------------------------------
 
-    if re.search(
-        r"\bintern(ship)?\b",
-        title_text,
-    ):
-        return "intern"
-
-    if re.search(
-        r"\bintern(ship)?\b",
-        description_text,
-    ):
+    if re.search(r"\bintern(ship)?\b", title_text):
         return "intern"
 
     # --------------------------------------------------------
-    # 3. Explicit source value
-    # --------------------------------------------------------
-
-    if source_experience_level:
-        source = _normalize(source_experience_level)
-
-        if source in EXPERIENCE_LEVELS:
-            return source
-
-        if "intern" in source:
-            return "intern"
-
-        if "entry" in source or "graduate" in source:
-            return "entry"
-
-        if "junior" in source:
-            return "junior"
-
-        if "mid" in source:
-            return "mid"
-
-        if "senior" in source:
-            return "senior"
-
-        if "lead" in source:
-            return "lead"
-
-    # --------------------------------------------------------
-    # 4. Seniority in title
+    # 3. Strong seniority signals in TITLE
+    #
+    # These must beat a bad source value such as:
+    # source_experience_level = "internship"
     # --------------------------------------------------------
 
     if re.search(r"\bsenior\b", title_text):
@@ -250,7 +216,44 @@ def classify_experience(
         return "junior"
 
     # --------------------------------------------------------
-    # 5. Description seniority
+    # 4. Numeric professional experience
+    #
+    # This must beat source "internship".
+    #
+    # Example:
+    # "3+ years of non-internship professional software
+    # development experience"
+    # -> mid
+    # --------------------------------------------------------
+
+    years = re.findall(
+        r"(\d+)\s*\+?\s*(?:years?|yrs?)",
+        description_text,
+    )
+
+    if years:
+        maximum = max(int(value) for value in years)
+
+        if maximum <= 1:
+            return "entry"
+
+        if maximum <= 3:
+            return "mid"
+
+        if maximum <= 6:
+            return "senior"
+
+        if maximum <= 10:
+            return "lead"
+
+        return "lead"
+
+    # --------------------------------------------------------
+    # 5. Strong seniority signals in DESCRIPTION
+    #
+    # Example:
+    # "seasoned senior developer"
+    # -> senior
     # --------------------------------------------------------
 
     if re.search(r"\bsenior\b", description_text):
@@ -272,32 +275,66 @@ def classify_experience(
         return "junior"
 
     # --------------------------------------------------------
-    # 6. Numeric years
+    # 6. Explicit internship ROLE in description
+    #
+    # Do NOT classify a job as intern merely because the word
+    # "internship" appears somewhere in the JD.
+    #
+    # Examples that count:
+    # "internship program"
+    # "internship opportunity"
+    # "intern position"
+    # "as an intern"
     # --------------------------------------------------------
 
-    years = re.findall(
-        r"(\d+)\s*\+?\s*(?:years?|yrs?)",
-        description_text,
+    internship_role_pattern = (
+        r"\binternship\s+(?:program|opportunity|position|role|opening)\b"
+        r"|\bintern\s+(?:position|role|opportunity)\b"
+        r"|\bas\s+an?\s+intern\b"
     )
 
-    if years:
-        maximum = max(int(value) for value in years)
+    if re.search(
+        internship_role_pattern,
+        description_text,
+    ):
+        return "intern"
 
-        if maximum <= 1:
+    # --------------------------------------------------------
+    # 7. Source experience is now only a FALLBACK
+    #
+    # This prevents:
+    # source = "internship"
+    # from incorrectly overriding:
+    # title/description = senior SDE
+    # --------------------------------------------------------
+
+    if source:
+        if source in EXPERIENCE_LEVELS:
+            return source
+
+        if "intern" in source:
+            return "intern"
+
+        if "entry" in source or "graduate" in source:
             return "entry"
 
-        # Existing project test contract:
-        # 2-3 years => mid
-        if maximum <= 3:
+        if "junior" in source:
+            return "junior"
+
+        if "mid" in source:
             return "mid"
 
-        if maximum <= 6:
+        if "senior" in source:
             return "senior"
 
-        if maximum <= 10:
+        if "lead" in source:
             return "lead"
 
-        return "lead"
+        if "manager" in source:
+            return "manager"
+
+        if "director" in source:
+            return "director"
 
     return "unknown"
 

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+
 import { createClient } from "@supabase/supabase-js";
 
 const url = import.meta.env.VITE_SUPABASE_URL;
@@ -16,15 +17,25 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  /*
+   * Remove SmartHire's custom session expiry timestamp.
+   */
   const clearSessionExpiry = () => {
     localStorage.removeItem(SESSION_EXPIRY_KEY);
   };
 
+  /*
+   * Create a SmartHire session expiry timestamp.
+   */
   const setSessionExpiry = () => {
     const expiresAt = Date.now() + SESSION_DURATION;
+
     localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
   };
 
+  /*
+   * Check SmartHire's custom session lifetime.
+   */
   const isSessionExpired = () => {
     const expiresAt = Number(localStorage.getItem(SESSION_EXPIRY_KEY));
 
@@ -35,6 +46,10 @@ export function AuthProvider({ children }) {
     return Date.now() >= expiresAt;
   };
 
+  /*
+   * Force logout when SmartHire's custom session
+   * lifetime has expired.
+   */
   const forceSignOut = async () => {
     clearSessionExpiry();
 
@@ -51,12 +66,17 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!supabase) {
+      setSession(null);
       setLoading(false);
-      return;
+      return undefined;
     }
 
     let mounted = true;
 
+    /*
+     * Load the existing Supabase session exactly once
+     * when the AuthProvider starts.
+     */
     async function loadSession() {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -65,19 +85,29 @@ export function AuthProvider({ children }) {
 
         if (error) {
           console.error("Get session error:", error);
+
           clearSessionExpiry();
           setSession(null);
+
           return;
         }
 
         const currentSession = data?.session ?? null;
 
+        /*
+         * No existing Supabase session.
+         */
         if (!currentSession) {
           clearSessionExpiry();
           setSession(null);
+
           return;
         }
 
+        /*
+         * Existing session has exceeded SmartHire's
+         * custom session duration.
+         */
         if (isSessionExpired()) {
           await forceSignOut();
 
@@ -88,6 +118,12 @@ export function AuthProvider({ children }) {
           return;
         }
 
+        /*
+         * Existing Supabase session is valid.
+         *
+         * Create our custom expiry only if one doesn't
+         * already exist.
+         */
         if (!localStorage.getItem(SESSION_EXPIRY_KEY)) {
           setSessionExpiry();
         }
@@ -102,13 +138,22 @@ export function AuthProvider({ children }) {
         }
       } finally {
         if (mounted) {
+          /*
+           * Authentication initialization is now complete.
+           */
           setLoading(false);
         }
       }
     }
 
+    /*
+     * Start initial session loading.
+     */
     loadSession();
 
+    /*
+     * Listen for future Supabase authentication events.
+     */
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
@@ -116,26 +161,72 @@ export function AuthProvider({ children }) {
 
       if (!mounted) return;
 
+      /*
+       * User explicitly signed out.
+       */
       if (event === "SIGNED_OUT") {
         clearSessionExpiry();
         setSession(null);
-        setLoading(false);
+
         return;
       }
 
-      if (event === "SIGNED_IN") {
+      /*
+       * Successful authentication.
+       *
+       * IMPORTANT:
+       * Update the session immediately.
+       * Navigation is handled by AuthModal.
+       */
+      if (event === "SIGNED_IN" && nextSession) {
         setSessionExpiry();
-      }
+        setSession(nextSession);
 
-      if (nextSession && isSessionExpired()) {
-        forceSignOut();
         return;
       }
 
-      setSession(nextSession ?? null);
-      setLoading(false);
+      /*
+       * Token/session refreshed.
+       */
+      if (event === "TOKEN_REFRESHED" && nextSession) {
+        /*
+         * If SmartHire's custom session lifetime has
+         * expired, invalidate the session.
+         */
+        if (isSessionExpired()) {
+          void forceSignOut();
+          return;
+        }
+
+        setSession(nextSession);
+
+        return;
+      }
+
+      /*
+       * Other Supabase auth events with a session.
+       */
+      if (nextSession) {
+        if (isSessionExpired()) {
+          void forceSignOut();
+          return;
+        }
+
+        setSession(nextSession);
+
+        return;
+      }
+
+      /*
+       * No session.
+       */
+      setSession(null);
     });
 
+    /*
+     * Periodically check SmartHire's custom session
+     * expiration.
+     */
     const interval = setInterval(async () => {
       if (!mounted) return;
 
@@ -144,6 +235,10 @@ export function AuthProvider({ children }) {
       }
     }, 60 * 1000);
 
+    /*
+     * Re-check expiration when the browser tab becomes
+     * visible again.
+     */
     const handleVisibilityChange = async () => {
       if (!document.hidden && isSessionExpired()) {
         await forceSignOut();
@@ -152,14 +247,25 @@ export function AuthProvider({ children }) {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
+    /*
+     * Cleanup.
+     */
     return () => {
       mounted = false;
+
       subscription.unsubscribe();
+
       clearInterval(interval);
+
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
+  /*
+   * ==========================
+   * SIGN IN
+   * ==========================
+   */
   const signIn = async (email, password) => {
     if (!supabase) {
       throw new Error("SmartHire authentication is not configured.");
@@ -172,16 +278,26 @@ export function AuthProvider({ children }) {
       password,
     });
 
+    /*
+     * IMPORTANT:
+     *
+     * Do not modify local auth UI here when Supabase
+     * rejects credentials.
+     *
+     * Throwing the error allows AuthModal to display
+     * the error directly inside the login form.
+     */
     if (error) {
       throw error;
     }
 
+    /*
+     * Successful login.
+     */
     if (data?.session) {
       setSessionExpiry();
       setSession(data.session);
     }
-
-    console.log("ACCESS TOKEN:", data?.session?.access_token);
 
     return {
       data,
@@ -189,12 +305,18 @@ export function AuthProvider({ children }) {
     };
   };
 
+  /*
+   * ==========================
+   * SIGN UP
+   * ==========================
+   */
   const signUp = async (email, password, fullName) => {
     if (!supabase) {
       throw new Error("SmartHire authentication is not configured.");
     }
 
     const cleanEmail = email.trim().toLowerCase();
+
     const cleanName = fullName.trim();
 
     const { data, error } = await supabase.auth.signUp({
@@ -207,10 +329,16 @@ export function AuthProvider({ children }) {
       },
     });
 
+    /*
+     * Signup failure stays inside AuthModal.
+     */
     if (error) {
       throw error;
     }
 
+    /*
+     * Successful signup with an active session.
+     */
     if (data?.session) {
       setSessionExpiry();
       setSession(data.session);
@@ -222,6 +350,11 @@ export function AuthProvider({ children }) {
     };
   };
 
+  /*
+   * ==========================
+   * SIGN OUT
+   * ==========================
+   */
   const signOut = async () => {
     if (!supabase) {
       throw new Error("SmartHire authentication is not configured.");
@@ -233,6 +366,7 @@ export function AuthProvider({ children }) {
 
     if (error) {
       console.error("Supabase sign out error:", error);
+
       throw error;
     }
 
@@ -241,6 +375,9 @@ export function AuthProvider({ children }) {
     return true;
   };
 
+  /*
+   * Expose authentication state and methods.
+   */
   const value = useMemo(
     () => ({
       session,

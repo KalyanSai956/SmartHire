@@ -731,7 +731,63 @@ async def recommend_jobs(
         jobs,
         profile_experience,
     )
+    print(
+    "\n========== EXPERIENCE GATE ==========",
+    flush=True,
+)
 
+    print(
+    "PROFILE EXPERIENCE:",
+    profile_experience,
+    flush=True,
+)
+
+    print(
+    "INPUT JOBS:",
+    len(jobs),
+    flush=True,
+)
+
+    print(
+    "ALLOWED JOBS:",
+    len(experience_jobs),
+    flush=True,
+)
+
+    print(
+    "REJECTED JOBS:",
+    experience_rejected,
+    flush=True,
+)
+
+    for job in jobs[:20]:
+        compatible = experience_compatible(
+            profile_experience,
+        job_title=job.get("title") or "",
+        job_description=job.get("description") or "",
+        job_experience_level=(
+            job.get("classified_experience_level")
+            or job.get("experience_level")
+        ),
+        source_experience_level=job.get("experience_level"),
+    )
+
+    print(
+        "EXPERIENCE CHECK:",
+        compatible,
+        "|",
+        job.get("title"),
+        "| CLASSIFIED:",
+        job.get("classified_experience_level"),
+        "| SOURCE:",
+        job.get("experience_level"),
+        flush=True,
+    )
+
+    print(
+    "========== END EXPERIENCE GATE ==========\n",
+    flush=True,
+)
     jobs = experience_jobs
 
     if not jobs:

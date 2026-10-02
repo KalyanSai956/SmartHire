@@ -9,6 +9,9 @@ from fastapi import (
     FastAPI,
     Request,
 )
+from backend.api.admin import (
+    router as admin_router,
+)
 from fastapi.middleware.cors import (
     CORSMiddleware,
 )
@@ -271,7 +274,9 @@ app.include_router(
 app.include_router(
     job_rag_router
 )
-
+app.include_router(
+    admin_router
+)
 
 @app.get("/")
 async def root():

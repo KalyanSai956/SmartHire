@@ -321,16 +321,8 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  /* =====================================================
-     RENDER
-     ===================================================== */
   return (
-    <div className="mx-auto max-w-8xl page-shell">
-      {/* =================================================
-          HERO / CAREER PROFILE
-          ================================================= */}
-
+    <div className="page-shell">
       <section className="career-profile-banner">
         <div className="career-profile-main">
           <div className="career-avatar">

@@ -286,7 +286,6 @@ function Landing() {
                 <div className="lh-dashboard">
                   <aside className="lh-dashboard-sidebar">
                     <div className="lh-dashboard-logo">
-                      <img src="/smarthire.png" alt="" />
                       <span>SmartHire</span>
                     </div>
 

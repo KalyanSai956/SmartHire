@@ -618,6 +618,12 @@ export default function Jobs() {
         remoteType: remote,
         employmentType: employment,
       });
+      console.log("========== RECOMMENDATION RESPONSE ==========");
+      console.log(data);
+      console.log("RECOMMENDATION RESULTS:", data?.results);
+      console.log("RECOMMENDATION JOBS:", data?.jobs);
+      console.log("RECOMMENDATION ARRAY:", data?.recommendations);
+      console.log("============================================");
 
       setJobs(normalizeRecommendationResponse(data));
     } catch (err) {
