@@ -1,19 +1,16 @@
 services:
-  # ==========================================================
-  # Redis
-  # ==========================================================
-
   redis:
     image: redis:7-alpine
-
     container_name: smarthire-redis
-
     restart: unless-stopped
 
     command:
       - redis-server
       - --appendonly
       - "yes"
+
+    ports:
+      - "6379:6379"
 
     volumes:
       - redis_data:/data
@@ -27,17 +24,12 @@ services:
     networks:
       - smarthire
 
-  # ==========================================================
-  # SmartHire Backend
-  # ==========================================================
-
   backend:
     build:
       context: .
       dockerfile: Dockerfile
 
     container_name: smarthire-backend
-
     restart: unless-stopped
 
     env_file:
@@ -60,16 +52,8 @@ services:
     networks:
       - smarthire
 
-# ============================================================
-# Volumes
-# ============================================================
-
 volumes:
   redis_data:
-
-# ============================================================
-# Network
-# ============================================================
 
 networks:
   smarthire:

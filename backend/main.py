@@ -45,6 +45,8 @@ from backend.core.config import (
     APP_ENV,
     APP_TITLE,
     APP_VERSION,
+    REDIS_ENABLED,
+    REDIS_URL,
     SENTENCE_TRANSFORMER_MODEL,
     SPACY_MODEL_PRIMARY,
     SPACY_MODEL_SECONDARY,
@@ -76,19 +78,29 @@ async def lifespan(
     # Redis
     # --------------------------------------------------------
 
-    app.state.redis = (
-        await create_redis_client()
+    try:
+        logger.info(
+        "Initializing Redis: enabled=%s url=%s",
+        REDIS_ENABLED,
+        REDIS_URL.split("@")[-1],
     )
 
-    if app.state.redis is not None:
+        app.state.redis = await create_redis_client()
+
+        if app.state.redis is None:
+            raise RuntimeError(
+            "Redis initialization returned None while Redis is enabled."
+        )
+
         logger.info(
-            "Redis caching and rate limiting enabled."
-        )
-    else:
-        logger.warning(
-            "Redis unavailable. "
-            "Cache will be bypassed."
-        )
+        "Redis caching and rate limiting enabled."
+    )
+
+    except Exception:
+        logger.exception(
+        "Redis initialization failed during application startup."
+    )
+        raise
 
     # --------------------------------------------------------
     # spaCy

@@ -34,6 +34,13 @@ def _rate_limit_dependency(
             "redis",
             None,
         )
+        import logging
+        logger = logging.getLogger("smarthire.rate_limit")
+        logger.warning(
+    "RATE LIMIT REDIS STATE: present=%s type=%s",
+    redis is not None,
+    type(redis).__name__ if redis is not None else "None",
+)
 
         await enforce_rate_limit(
             redis,
