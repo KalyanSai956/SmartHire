@@ -16,50 +16,11 @@
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 
-<img src="./screenshots/landing.png" alt="SmartHire Landing Page" width="100%" />
+<img src="screenshots/landing.png" alt="SmartHire Landing Page" width="100%" />
 
 </div>
 
 ---
-
-## Architecture
-
-SmartHire follows a modular full-stack architecture connecting a React/Vite frontend, a FastAPI backend, Supabase services, NLP/AI engines, Redis caching, and external LLM providers.
-
-<p align="center">
-  <img src="screenshots/smarthire_ats_architecture.png" alt="SmartHire ATS Architecture" width="100%" />
-</p>
-
-### Architecture Flow
-
-```text
-React + Vite
-     │
-     ├── Supabase Authentication ──► JWT
-     │
-     ▼
-FastAPI Backend
-     │
-     ├── API Routes
-     ├── Resume Scoring
-     ├── Job Matching
-     ├── Resume Search / RAG
-     └── PDF Reports
-     │
-     ├───────────────┬───────────────┐
-     ▼               ▼               ▼
- NLP Engine       Supabase         Redis
- spaCy            PostgreSQL       Cache
- Sentence         Database         Rate Limits
- Transformers
-     │
-     ▼
-LLM Gateway
-     ├── Groq
-     ├── OpenAI
-     ├── Google
-     └── Anthropic
-```
 
 ## Table of Contents
 
@@ -93,34 +54,35 @@ Instead of relying on simple keyword matching, SmartHire combines **NLP, semanti
 
 ## Screenshots
 
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="./screenshots/dashboard.png" alt="SmartHire Dashboard" width="100%" /><br />
-      <sub><b>Dashboard</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="./screenshots/analysis.png" alt="SmartHire Resume Analysis" width="100%" /><br />
-      <sub><b>Resume Analysis</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src="./screenshots/jobs.png" alt="SmartHire Jobs" width="100%" /><br />
-      <sub><b>Jobs</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="./screenshots/results.png" alt="SmartHire ATS Results" width="100%" /><br />
-      <sub><b>ATS Results</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" colspan="2">
-      <img src="./screenshots/aigateway.png" alt="SmartHire AI Gateway" width="50%" /><br />
-      <sub><b>AI Gateway</b></sub>
-    </td>
-  </tr>
-</table>
+### Dashboard
+
+<p align="center">
+  <img src="screenshots/dashboard.png" alt="SmartHire Dashboard" width="100%" />
+</p>
+
+### Resume Analysis
+
+<p align="center">
+  <img src="screenshots/analysis.png" alt="SmartHire Resume Analysis" width="100%" />
+</p>
+
+### Jobs
+
+<p align="center">
+  <img src="screenshots/jobs.png" alt="SmartHire Jobs" width="100%" />
+</p>
+
+### ATS Results
+
+<p align="center">
+  <img src="screenshots/results.png" alt="SmartHire ATS Results" width="100%" />
+</p>
+
+### AI Gateway
+
+<p align="center">
+  <img src="screenshots/aigateway.png" alt="SmartHire AI Gateway" width="100%" />
+</p>
 
 ---
 
@@ -180,6 +142,45 @@ Actionable guidance on resume content, missing skills and keywords, project rele
 | **Docker**            | Run the backend with Docker and Docker Compose           |
 
 ---
+
+## Architecture
+
+SmartHire follows a modular full-stack architecture connecting a React/Vite frontend, a FastAPI backend, Supabase services, NLP/AI engines, Redis caching, and external LLM providers.
+
+<p align="center">
+  <img src="screenshots/smarthire_ats_architecture.png" alt="SmartHire ATS Architecture" width="100%" />
+</p>
+
+### Architecture Flow
+
+```text
+React + Vite
+     │
+     ├── Supabase Authentication ──► JWT
+     │
+     ▼
+FastAPI Backend
+     │
+     ├── API Routes
+     ├── Resume Scoring
+     ├── Job Matching
+     ├── Resume Search / RAG
+     └── PDF Reports
+     │
+     ├───────────────┬───────────────┐
+     ▼               ▼               ▼
+ NLP Engine       Supabase         Redis
+ spaCy            PostgreSQL       Cache
+ Sentence         Database         Rate Limits
+ Transformers
+     │
+     ▼
+LLM Gateway
+     ├── Groq
+     ├── OpenAI
+     ├── Google
+     └── Anthropic
+```
 
 ---
 
