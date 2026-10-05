@@ -5,40 +5,20 @@ import uuid
 from contextlib import asynccontextmanager
 
 import spacy
-from fastapi import (
-    FastAPI,
-    Request,
-)
-from backend.api.admin import (
-    router as admin_router,
-)
-from fastapi.middleware.cors import (
-    CORSMiddleware,
-)
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sentence_transformers import SentenceTransformer
 
-from backend.api.jobs import (
-    router as jobs_router,
-)
-from backend.api.job_rag import (
-    router as job_rag_router,
-)
-from backend.api.llm_settings import (
-    router as llm_settings_router,
-)
-from backend.api.profile import (
-    router as profile_router,
-)
-from backend.api.resume_rag import (
-    router as resume_rag_router,
-)
-from backend.api.routes import (
-    router,
-)
-from backend.api.usage import (
-    router as usage_router,
-)
+from backend.api.admin import router as admin_router
+from backend.api.job_rag import router as job_rag_router
+from backend.api.jobs import router as jobs_router
+from backend.api.llm_settings import router as llm_settings_router
+from backend.api.profile import router as profile_router
+from backend.api.resume_rag import router as resume_rag_router
+from backend.api.routes import router
+from backend.api.usage import router as usage_router
+
 from backend.core.config import (
     ALLOWED_ORIGINS,
     APP_DESCRIPTION,
@@ -51,16 +31,19 @@ from backend.core.config import (
     SPACY_MODEL_PRIMARY,
     SPACY_MODEL_SECONDARY,
 )
+
 from backend.services.cache.redis_client import (
     close_redis_client,
     create_redis_client,
 )
 
 
-logger = logging.getLogger(
-    "smarthire"
-)
+logger = logging.getLogger("smarthire")
 
+
+# ================================================================
+# APPLICATION LIFESPAN
+# ================================================================
 
 @asynccontextmanager
 async def lifespan(
@@ -74,37 +57,44 @@ async def lifespan(
         "Starting SmartHire ATS API..."
     )
 
-    # --------------------------------------------------------
+    # ============================================================
     # Redis
-    # --------------------------------------------------------
+    # ============================================================
 
     try:
         logger.info(
-        "Initializing Redis: enabled=%s url=%s",
-        REDIS_ENABLED,
-        REDIS_URL.split("@")[-1],
-    )
+            "Initializing Redis: enabled=%s url=%s",
+            REDIS_ENABLED,
+            REDIS_URL.split("@")[-1],
+        )
 
         app.state.redis = await create_redis_client()
 
-        if app.state.redis is None:
+        if REDIS_ENABLED and app.state.redis is None:
             raise RuntimeError(
-            "Redis initialization returned None while Redis is enabled."
-        )
+                "Redis initialization returned None "
+                "while Redis is enabled."
+            )
 
-        logger.info(
-        "Redis caching and rate limiting enabled."
-    )
+        if app.state.redis is not None:
+            logger.info(
+                "Redis caching and rate limiting enabled."
+            )
+        else:
+            logger.info(
+                "Redis is disabled."
+            )
 
     except Exception:
         logger.exception(
-        "Redis initialization failed during application startup."
-    )
+            "Redis initialization failed during "
+            "application startup."
+        )
         raise
 
-    # --------------------------------------------------------
+    # ============================================================
     # spaCy
-    # --------------------------------------------------------
+    # ============================================================
 
     logger.info(
         "Loading spaCy model: %s",
@@ -122,7 +112,6 @@ async def lifespan(
         )
 
     except OSError:
-
         logger.warning(
             "%s not found. "
             "Using fallback model: %s",
@@ -134,38 +123,60 @@ async def lifespan(
             SPACY_MODEL_SECONDARY
         )
 
-    # --------------------------------------------------------
+        logger.info(
+            "Loaded fallback spaCy model: %s",
+            SPACY_MODEL_SECONDARY,
+        )
+
+    # ============================================================
     # Sentence Transformer
-    # --------------------------------------------------------
+    # ============================================================
 
     logger.info(
         "Loading embedding model: %s",
         SENTENCE_TRANSFORMER_MODEL,
     )
 
-    app.state.embedder = (
-        SentenceTransformer(
-            SENTENCE_TRANSFORMER_MODEL
-        )
+    app.state.embedder = SentenceTransformer(
+        SENTENCE_TRANSFORMER_MODEL
+    )
+
+    logger.info(
+        "Loaded embedding model: %s",
+        SENTENCE_TRANSFORMER_MODEL,
     )
 
     logger.info(
         "All SmartHire models loaded."
     )
 
+    # ============================================================
+    # APPLICATION RUNNING
+    # ============================================================
+
     try:
         yield
 
     finally:
-
         logger.info(
             "Shutting down SmartHire ATS API..."
         )
 
-        await close_redis_client(
-            app.state.redis
+        redis_client = getattr(
+            app.state,
+            "redis",
+            None,
         )
 
+        if redis_client is not None:
+            await close_redis_client(
+                redis_client
+            )
+
+
+# ================================================================
+# FASTAPI APPLICATION
+# ================================================================
 
 app = FastAPI(
     title=APP_TITLE,
@@ -185,6 +196,10 @@ app = FastAPI(
 )
 
 
+# ================================================================
+# REQUEST CONTEXT + SECURITY HEADERS
+# ================================================================
+
 @app.middleware("http")
 async def request_context_middleware(
     request: Request,
@@ -196,11 +211,18 @@ async def request_context_middleware(
         )
     )
 
+    # ------------------------------------------------------------
+    # Validate incoming request ID
+    # ------------------------------------------------------------
+
     try:
-        uuid.UUID(
+        parsed_request_id = uuid.UUID(
             incoming_request_id
         )
-        request_id = incoming_request_id
+
+        request_id = str(
+            parsed_request_id
+        )
 
     except (
         ValueError,
@@ -211,9 +233,11 @@ async def request_context_middleware(
             uuid.uuid4()
         )
 
-    request.state.request_id = (
-        request_id
-    )
+    request.state.request_id = request_id
+
+    # ------------------------------------------------------------
+    # Process request
+    # ------------------------------------------------------------
 
     try:
         response = await call_next(
@@ -245,21 +269,76 @@ async def request_context_middleware(
             },
         )
 
+    # ============================================================
+    # SECURITY HEADERS
+    # ============================================================
+
     response.headers[
         "X-Request-ID"
     ] = request_id
 
+    response.headers[
+        "X-Content-Type-Options"
+    ] = "nosniff"
+
+    response.headers[
+        "X-Frame-Options"
+    ] = "DENY"
+
+    response.headers[
+        "Referrer-Policy"
+    ] = "no-referrer"
+
+    # SmartHire responses contain user-specific resume,
+    # ATS and authentication-related information.
+    response.headers[
+        "Cache-Control"
+    ] = "no-store"
+
+    # HSTS should only be enabled in production where
+    # the API is served through HTTPS.
+    if APP_ENV == "production":
+        response.headers[
+            "Strict-Transport-Security"
+        ] = (
+            "max-age=31536000; "
+            "includeSubDomains"
+        )
+
     return response
 
 
+# ================================================================
+# CORS
+# ================================================================
+
 app.add_middleware(
     CORSMiddleware,
+
     allow_origins=ALLOWED_ORIGINS,
+
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+
+    allow_methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+    ],
+
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Request-ID",
+    ],
 )
 
+
+# ================================================================
+# ROUTERS
+# ================================================================
 
 app.include_router(router)
 
@@ -286,9 +365,15 @@ app.include_router(
 app.include_router(
     job_rag_router
 )
+
 app.include_router(
     admin_router
 )
+
+
+# ================================================================
+# ROOT
+# ================================================================
 
 @app.get("/")
 async def root():
@@ -314,6 +399,10 @@ async def root():
         },
     }
 
+
+# ================================================================
+# LOCAL DEVELOPMENT
+# ================================================================
 
 if __name__ == "__main__":
     import uvicorn

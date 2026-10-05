@@ -922,7 +922,6 @@ function Landing() {
 
             <div className="lh-workspace-map">
               <div className="lh-workspace-center">
-                <img src="/smarthire.png" alt="SmartHire" />
                 <strong>SmartHire</strong>
                 <span>Career Workspace</span>
               </div>

@@ -61,18 +61,29 @@ a {
   position: sticky;
   top: 0;
   z-index: 1000;
-  border-bottom: 1px solid rgba(228, 231, 236, 0.9);
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(20px);
+  padding: 14px 0 0;
+  border-bottom: 0;
+  background: transparent;
+  backdrop-filter: none;
+  pointer-events: none; /* only the bar itself is clickable */
 }
 
 .lh-navbar-inner {
-  min-height: 50px;
+  position: relative;
+  width: min(1720px, calc(100% - 192px));
+  min-height: 55px;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   gap: 30px;
+  border: 1px solid rgba(18, 3, 3, 0.281);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
+  backdrop-filter: blur(20px);
+  pointer-events: auto;
 }
-
 .lh-brand {
   display: inline-flex;
   align-items: center;
@@ -2361,5 +2372,31 @@ a {
 
   .lh-footer-links {
     gap: 25px 15px;
+  }
+}
+@media (max-width: 1200px) {
+  .lh-navbar-inner {
+    width: calc(100% - 40px);
+  }
+}
+
+@media (max-width: 900px) {
+  .lh-nav {
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .lh-navbar {
+    padding-top: 10px;
+  }
+
+  .lh-navbar-inner {
+    width: calc(100% - 28px);
+    min-height: 58px;
+    padding: 0 14px;
+    border-radius: 16px;
   }
 }
