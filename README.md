@@ -1,33 +1,33 @@
-# SmartHire
+<div align="center">
 
-An AI-powered Applicant Tracking System (ATS) that analyzes resumes against job descriptions, evaluates resume quality, validates skills, generates ATS scores, and provides intelligent career insights.
+# SmartHire ATS
 
-SmartHire is designed for students, job seekers, and developers who want to understand how well their resume matches a target role and improve their chances of getting shortlisted.
+**An AI-powered Applicant Tracking System that analyzes resumes against job descriptions, evaluates resume quality, validates skills, and generates actionable ATS scores.**
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://your-vercel-domain.vercel.app/)
+[![GitHub](https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/KalyanSai956/SmartHire_ATS)
+
+![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+
+<img src="./screenshots/landing.png" alt="SmartHire Landing Page" width="100%" />
+
+</div>
 
 ---
 
-## 🌐 Live Demo
+## Architecture
 
-**Web Application:**  
-https://your-vercel-domain.vercel.app/
-
-**GitHub Repository:**  
-https://github.com/KalyanSai956/SmartHire_ATS
-
-> Replace the Vercel URL above with your actual deployed frontend URL.
-
----
-
-## 🏗️ Architecture
-
-SmartHire ATS follows a modular full-stack architecture connecting the React/Vite frontend, FastAPI backend, Supabase services, NLP/AI engines, Redis caching, and external LLM providers.
+SmartHire follows a modular full-stack architecture connecting a React/Vite frontend, a FastAPI backend, Supabase services, NLP/AI engines, Redis caching, and external LLM providers.
 
 <p align="center">
-  <img
-    src="./screenshots/smarthire_ats_architecture.png"
-    alt="SmartHire ATS Architecture"
-    width="100%"
-  />
+  <img src="screenshots/smarthire_ats_architecture.png" alt="SmartHire ATS Architecture" width="100%" />
 </p>
 
 ### Architecture Flow
@@ -35,15 +35,12 @@ SmartHire ATS follows a modular full-stack architecture connecting the React/Vit
 ```text
 React + Vite
      │
-     ├── Supabase Authentication
-     │        │
-     │        └── JWT
+     ├── Supabase Authentication ──► JWT
      │
      ▼
 FastAPI Backend
      │
      ├── API Routes
-     │
      ├── Resume Scoring
      ├── Job Matching
      ├── Resume Search / RAG
@@ -58,176 +55,203 @@ FastAPI Backend
      │
      ▼
 LLM Gateway
-     │
      ├── Groq
      ├── OpenAI
      ├── Google
      └── Anthropic
-
-
-
-
-
-📸 Screenshots
-Landing Page
-<p align="center">
-  <img
-    src="./screenshots/landing.png"
-    alt="SmartHire Landing Page"
-    width="100%"
-  />
-</p>
-
-Dashboard
-<p align="center">
-  <img
-    src="./screenshots/dashboard.png"
-    alt="SmartHire Dashboard"
-    width="100%"
-  />
-</p>
-
-Resume Analysis
-<p align="center">
-  <img
-    src="./screenshots/analysis.png"
-    alt="SmartHire Resume Analysis"
-    width="100%"
-  />
-</p>
-
-Jobs
-<p align="center">
-  <img
-    src="./screenshots/jobs.png"
-    alt="SmartHire Jobs"
-    width="100%"
-  />
-</p>
-
-ATS Results
-<p align="center">
-  <img
-    src="./screenshots/results.png"
-    alt="SmartHire ATS Results"
-    width="100%"
-  />
-</p>
-
-AI Gateway
-<p align="center">
-  <img
-    src="./screenshots/aigateway.png"
-    alt="SmartHire AI Gateway"
-    width="100%"
-  />
-</p>
-
-✨ Features
-🤖 AI-Powered Resume Analysis
-- AI-powered resume analysis
-- Resume text extraction
-- Structured resume profile generation
-- Skills extraction
-- Experience analysis
-- Project analysis
-- Resume quality evaluation
-- Detailed resume feedback
-
-📊 Advanced ATS Scoring
-SmartHire evaluates resumes using multiple dimensions instead of relying only on keyword matching.
-- Overall ATS Score
-- Job Description Match
-- Keyword Match
-- Semantic Match
-- Skills Match
-- Experience Match
-- Project Match
-- Resume Quality
-- Missing Keywords
-- Matched Keywords
-- Skills Gap
-
-
-🧠 Semantic Resume Matching
-SmartHire uses NLP and semantic embeddings to understand the relationship between a resume and a job description.
-This helps identify relevant experience and skills even when the exact keywords are not present.
-
-💼 Job Description Intelligence
-Analyze job descriptions to identify:
-- Role information
-- Required skills
-- Preferred skills
-- Job-specific requirements
-- Resume-to-JD compatibility
-
-📄 Resume Quality Engine
-Resume quality is evaluated across multiple categories:
-- Contact Information
-- Structure
-- Experience
-- Projects
-- Skills
-- Content Quality
-
-🔎 Skill Validation
-SmartHire analyzes skills mentioned in a resume and provides validation information including:
-- Validated skills
-- Unvalidated skills
-- Total skills
-- Validated skill count
-- Validation percentage
-
-📝 Detailed Feedback
-The system provides actionable feedback to help candidates improve:
-- Resume content
-- Missing skills
-- Missing keywords
-- Project relevance
-- Job-description alignment
-- Overall resume quality
-
-📚 Analysis History
-Users can access previously analyzed resumes and maintain their analysis history.
-
-📥 PDF Reports
-Generate downloadable PDF reports containing resume analysis results.
-
-🔐 Authentication
-SmartHire includes authenticated user workflows and user-specific analysis history.
-
-🔑 BYOK AI Providers
-SmartHire supports Bring Your Own Key (BYOK) workflows for supported AI providers.
-
-⚡ Redis
-Redis is used for application caching, quota controls, and rate-limiting infrastructure.
-
-🧩 Resume Semantic Indexing
-SmartHire includes resume semantic indexing using embeddings, providing a foundation for retrieval-augmented career and resume intelligence.
-
-🐳 Docker
-The backend can be run using Docker and Docker Compose.
-
-🛠️ Tech Stack
-Frontend
-- React
-- Vite
-- JavaScript
-- CSS
-Backend
-- Python
-- FastAPI
-- REST APIs
-AI / NLP
-- spaCy
-- Sentence Transformers
-- LLM-based analysis
-- Semantic embeddings
-Database & Services
-- Supabase
-- PostgreSQL
-- Redis
-Infrastructure
-- Docker
-- Docker Compose
 ```
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Live Demo](#live-demo)
+- [Screenshots](#screenshots)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+
+---
+
+## Overview
+
+SmartHire is built for **students, job seekers, and developers** who want to understand how well their resume matches a target role and improve their chances of getting shortlisted.
+
+Instead of relying on simple keyword matching, SmartHire combines **NLP, semantic embeddings, and LLM-based analysis** to score a resume across multiple dimensions and deliver specific, actionable feedback.
+
+---
+
+## Live Demo
+
+| Resource          | Link                                                                        |
+| ----------------- | --------------------------------------------------------------------------- |
+| Web Application   | [your-vercel-domain.vercel.app](https://your-vercel-domain.vercel.app/)     |
+| GitHub Repository | [KalyanSai956/SmartHire_ATS](https://github.com/KalyanSai956/SmartHire_ATS) |
+
+---
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="./screenshots/dashboard.png" alt="SmartHire Dashboard" width="100%" /><br />
+      <sub><b>Dashboard</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="./screenshots/analysis.png" alt="SmartHire Resume Analysis" width="100%" /><br />
+      <sub><b>Resume Analysis</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="./screenshots/jobs.png" alt="SmartHire Jobs" width="100%" /><br />
+      <sub><b>Jobs</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="./screenshots/results.png" alt="SmartHire ATS Results" width="100%" /><br />
+      <sub><b>ATS Results</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2">
+      <img src="./screenshots/aigateway.png" alt="SmartHire AI Gateway" width="50%" /><br />
+      <sub><b>AI Gateway</b></sub>
+    </td>
+  </tr>
+</table>
+
+---
+
+## Key Features
+
+### AI-Powered Resume Analysis
+
+- Resume text extraction and structured profile generation
+- Skills, experience, and project analysis
+- Resume quality evaluation with detailed feedback
+
+### Advanced ATS Scoring
+
+SmartHire evaluates resumes across multiple dimensions rather than keywords alone.
+
+| Metric                    | Description                                                      |
+| ------------------------- | ---------------------------------------------------------------- |
+| **Overall ATS Score**     | Combined score across all dimensions                             |
+| **Job Description Match** | Overall compatibility with the target role                       |
+| **Keyword Match**         | Matched and missing keywords                                     |
+| **Semantic Match**        | Meaning-based similarity using embeddings                        |
+| **Skills Match**          | Alignment of resume skills with required skills, plus skills gap |
+| **Experience Match**      | Relevance of work experience                                     |
+| **Project Match**         | Relevance of projects to the role                                |
+| **Resume Quality**        | Structure, content, and completeness                             |
+
+### Semantic Resume Matching
+
+Uses NLP and sentence embeddings to understand the relationship between a resume and a job description, identifying relevant experience and skills even when exact keywords are absent.
+
+### Job Description Intelligence
+
+Analyzes job descriptions to extract role information, required skills, preferred skills, job-specific requirements, and resume-to-JD compatibility.
+
+### Resume Quality Engine
+
+Quality is assessed across six categories: **Contact Information, Structure, Experience, Projects, Skills,** and **Content Quality**.
+
+### Skill Validation
+
+Reports validated skills, unvalidated skills, total skills, validated skill count, and an overall validation percentage.
+
+### Detailed Feedback
+
+Actionable guidance on resume content, missing skills and keywords, project relevance, job-description alignment, and overall quality.
+
+### Platform Capabilities
+
+| Capability            | Details                                                  |
+| --------------------- | -------------------------------------------------------- |
+| **Analysis History**  | Access and manage previously analyzed resumes            |
+| **PDF Reports**       | Download resume analysis results as PDF                  |
+| **Authentication**    | Supabase-based user authentication with per-user history |
+| **BYOK AI Providers** | Bring Your Own Key support for supported LLM providers   |
+| **Redis**             | Caching, quota controls, and rate limiting               |
+| **Semantic Indexing** | Embedding-based resume indexing as a foundation for RAG  |
+| **Docker**            | Run the backend with Docker and Docker Compose           |
+
+---
+
+---
+
+## Tech Stack
+
+| Layer                   | Technologies                                                          |
+| ----------------------- | --------------------------------------------------------------------- |
+| **Frontend**            | React, Vite, JavaScript, CSS                                          |
+| **Backend**             | Python, FastAPI, REST APIs                                            |
+| **AI / NLP**            | spaCy, Sentence Transformers, LLM-based analysis, Semantic embeddings |
+| **Database & Services** | Supabase, PostgreSQL, Redis                                           |
+| **Infrastructure**      | Docker, Docker Compose                                                |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- Python 3.10+
+- Docker and Docker Compose (optional)
+- A Supabase project and a Redis instance
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/KalyanSai956/SmartHire_ATS.git
+cd SmartHire_ATS
+```
+
+### 2. Run the backend
+
+```bash
+# With Docker
+docker compose up --build
+
+# Or locally
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+### 3. Run the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+> Adjust folder names and commands above to match your repository layout, and add a `.env.example` documenting the required environment variables (Supabase URL/keys, Redis URL, LLM provider keys).
+
+---
+
+## Project Structure
+
+```text
+SmartHire_ATS/
+├── frontend/        # React + Vite application
+├── backend/         # FastAPI application
+├── screenshots/     # README images
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+<div align="center">
+
+**Built by [Kalyan Sai](https://github.com/KalyanSai956)**
+
+If you find this project useful, consider giving it a ⭐
+
+</div>
