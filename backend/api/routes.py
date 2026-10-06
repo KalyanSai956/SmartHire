@@ -25,6 +25,8 @@ from backend.models.schemas import (
     ComponentScores,
     JDComparison,
     SkillValidationDetails,
+    GrammarAnalysis,
+    GrammarError,
 )
 
 from backend.services.jd_intelligence import (
@@ -520,6 +522,267 @@ async def analyze_resume(
                 "in a few moments."
             ),
         )
+            # ============================================================
+    # STEP 5.5 — Grammar & Spelling Analysis
+    # ============================================================
+
+    grammar_raw = (
+        result.get("grammar_analysis")
+        or result.get("grammar_results")
+        or result.get("grammar")
+        or {}
+    )
+
+    # ------------------------------------------------------------
+    # Convert Pydantic model → dictionary if necessary
+    # ------------------------------------------------------------
+
+    if hasattr(grammar_raw, "model_dump"):
+        grammar_raw = grammar_raw.model_dump()
+
+    if not isinstance(grammar_raw, dict):
+        logger.warning(
+            "Grammar result has unexpected type: %s",
+            type(grammar_raw).__name__,
+        )
+
+        grammar_raw = {}
+
+    # ------------------------------------------------------------
+    # Safely normalize error lists
+    # ------------------------------------------------------------
+
+    critical_errors_raw = (
+        grammar_raw.get("critical_errors", [])
+        or []
+    )
+
+    moderate_errors_raw = (
+        grammar_raw.get("moderate_errors", [])
+        or []
+    )
+
+    minor_errors_raw = (
+        grammar_raw.get("minor_errors", [])
+        or []
+    )
+
+    # ------------------------------------------------------------
+    # Convert individual grammar errors
+    # ------------------------------------------------------------
+
+    def _build_grammar_errors(errors):
+
+        normalized = []
+
+        for error in errors:
+
+            if hasattr(error, "model_dump"):
+                error = error.model_dump()
+
+            if not isinstance(error, dict):
+                continue
+
+            normalized.append(
+                GrammarError(
+                    error_text=str(
+                        error.get(
+                            "error_text",
+                            "",
+                        )
+                    ),
+
+                    suggestions=list(
+                        error.get(
+                            "suggestions",
+                            [],
+                        )
+                        or []
+                    )[:5],
+
+                    message=str(
+                        error.get(
+                            "message",
+                            "",
+                        )
+                    ),
+
+                    rule_id=str(
+                        error.get(
+                            "rule_id",
+                            "",
+                        )
+                    ),
+
+                    category=str(
+                        error.get(
+                            "category",
+                            "",
+                        )
+                    ),
+
+                    issue_type=str(
+                        error.get(
+                            "issue_type",
+                            "",
+                        )
+                    ),
+
+                    offset=int(
+                        error.get(
+                            "offset",
+                            0,
+                        )
+                        or 0
+                    ),
+
+                    length=int(
+                        error.get(
+                            "length",
+                            0,
+                        )
+                        or 0
+                    ),
+
+                    severity=str(
+                        error.get(
+                            "severity",
+                            "minor",
+                        )
+                    ),
+                )
+            )
+
+        return normalized
+
+    critical_errors = _build_grammar_errors(
+        critical_errors_raw
+    )
+
+    moderate_errors = _build_grammar_errors(
+        moderate_errors_raw
+    )
+
+    minor_errors = _build_grammar_errors(
+        minor_errors_raw
+    )
+
+    # ------------------------------------------------------------
+    # Build final GrammarAnalysis object
+    # ------------------------------------------------------------
+
+    grammar_analysis_result = GrammarAnalysis(
+
+        total_errors=int(
+            grammar_raw.get(
+                "total_errors",
+                len(critical_errors)
+                + len(moderate_errors)
+                + len(minor_errors),
+            )
+            or 0
+        ),
+
+        critical_errors=critical_errors,
+
+        moderate_errors=moderate_errors,
+
+        minor_errors=minor_errors,
+
+        grammar_score=(
+            float(
+                grammar_raw["grammar_score"]
+            )
+            if grammar_raw.get(
+                "grammar_score"
+            ) is not None
+            else None
+        ),
+
+        penalty_applied=float(
+            grammar_raw.get(
+                "penalty_applied",
+                0.0,
+            )
+            or 0.0
+        ),
+
+        error_free_percentage=(
+            float(
+                grammar_raw[
+                    "error_free_percentage"
+                ]
+            )
+            if grammar_raw.get(
+                "error_free_percentage"
+            ) is not None
+            else None
+        ),
+
+        component_status=grammar_raw.get(
+            "_component_status",
+            grammar_raw.get(
+                "component_status",
+                None,
+            ),
+        ),
+
+        note=grammar_raw.get(
+            "_note",
+            grammar_raw.get(
+                "note",
+                None,
+            ),
+        ),
+    )
+
+    # ------------------------------------------------------------
+    # Grammar debug logging
+    # ------------------------------------------------------------
+
+    logger.info(
+        "========== API GRAMMAR RESPONSE =========="
+    )
+
+    logger.info(
+        "GRAMMAR API STATUS: %s",
+        grammar_analysis_result.component_status,
+    )
+
+    logger.info(
+        "GRAMMAR API TOTAL: %s",
+        grammar_analysis_result.total_errors,
+    )
+
+    logger.info(
+        "GRAMMAR API CRITICAL: %s",
+        len(
+            grammar_analysis_result.critical_errors
+        ),
+    )
+
+    logger.info(
+        "GRAMMAR API MODERATE: %s",
+        len(
+            grammar_analysis_result.moderate_errors
+        ),
+    )
+
+    logger.info(
+        "GRAMMAR API MINOR: %s",
+        len(
+            grammar_analysis_result.minor_errors
+        ),
+    )
+
+    logger.info(
+        "GRAMMAR API SCORE: %s",
+        grammar_analysis_result.grammar_score,
+    )
+
+    logger.info(
+        "=========================================="
+    )
 
     # ============================================================
     # STEP 6 — Existing JD comparison
@@ -677,6 +940,19 @@ async def analyze_resume(
         skill_validation_details=skill_val_details,
 
         # --------------------------------------------------------
+        # Grammar & Spelling Analysis
+        # --------------------------------------------------------
+
+        grammar_analysis=grammar_analysis_result,
+
+        # Backward-compatible alias
+        grammar_results=grammar_analysis_result,
+
+        # --------------------------------------------------------
+        # Existing compatibility fields
+        # --------------------------------------------------------
+
+        # --------------------------------------------------------
         # Existing compatibility fields
         # --------------------------------------------------------
 
@@ -749,7 +1025,22 @@ async def analyze_resume(
 
         history_result = dict(result)
 
-        # Add Phase 3B/3C/3D information.
+        # ========================================================
+        # Preserve Grammar & Spelling Analysis
+        # ========================================================
+
+        history_result[
+            "grammar_analysis"
+        ] = grammar_analysis_result.model_dump()
+
+        # Backward-compatible alias
+        history_result[
+            "grammar_results"
+        ] = grammar_analysis_result.model_dump()
+
+        # ========================================================
+        # Add Phase 3B/3C/3D information
+        # ========================================================
 
         history_result[
             "resume_profile"

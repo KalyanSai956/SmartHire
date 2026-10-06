@@ -347,7 +347,10 @@ def calculate_overall_score(
         bonuses['good_skill_validation'] = 1.0
         score += 1.0
 
-    if grammar_results.get('total_errors', 0) == 0:
+    if (
+    grammar_results.get('_component_status') == 'available'
+    and grammar_results.get('total_errors', 0) == 0
+):
         bonuses['perfect_grammar'] = 1.0
         score += 1.0
 

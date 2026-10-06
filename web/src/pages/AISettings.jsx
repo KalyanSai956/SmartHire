@@ -45,8 +45,24 @@ export default function Settings() {
 
   const [visibleKeys, setVisibleKeys] = useState({});
 
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  // Centered popup: { type: "error" | "success", text: string } | null
+  const [popup, setPopup] = useState(null);
+
+  function showPopup(type, text) {
+    setPopup({ type, text });
+  }
+
+  function closePopup() {
+    setPopup(null);
+  }
+
+  // Success popups auto-close after 3s. Errors stay until dismissed.
+  useEffect(() => {
+    if (popup?.type !== "success") return;
+
+    const timer = setTimeout(() => setPopup(null), 3000);
+    return () => clearTimeout(timer);
+  }, [popup]);
 
   async function getAccessToken() {
     const {
@@ -63,7 +79,6 @@ export default function Settings() {
   async function loadSettings() {
     try {
       setLoading(true);
-      setError("");
 
       const token = await getAccessToken();
 
@@ -100,7 +115,7 @@ export default function Settings() {
         localStorage.removeItem("smarthire_active_provider");
       }
     } catch (err) {
-      setError(err.message || "Failed to load AI settings.");
+      showPopup("error", err.message || "Failed to load AI settings.");
     } finally {
       setLoading(false);
     }
@@ -135,14 +150,13 @@ export default function Settings() {
     const apiKey = apiKeys[provider]?.trim();
 
     if (!apiKey) {
-      setError(`Enter your ${PROVIDER_INFO[provider].name} API key.`);
+      showPopup("error", `Enter your ${PROVIDER_INFO[provider].name} API key.`);
       return;
     }
 
     try {
       setSavingProvider(provider);
-      setError("");
-      setMessage("");
+      setPopup(null);
 
       const token = await getAccessToken();
 
@@ -161,11 +175,15 @@ export default function Settings() {
         [provider]: "",
       }));
 
-      setMessage(`${PROVIDER_INFO[provider].name} connected successfully.`);
-
+      // Reload first so the refresh can't overwrite the success popup
       await loadSettings();
+
+      showPopup(
+        "success",
+        `${PROVIDER_INFO[provider].name} connected successfully.`,
+      );
     } catch (err) {
-      setError(err.message || "Failed to connect provider.");
+      showPopup("error", err.message || "Failed to connect provider.");
     } finally {
       setSavingProvider(null);
     }
@@ -174,8 +192,7 @@ export default function Settings() {
   async function handleDisconnect(provider) {
     try {
       setSavingProvider(provider);
-      setError("");
-      setMessage("");
+      setPopup(null);
 
       const token = await getAccessToken();
 
@@ -186,17 +203,17 @@ export default function Settings() {
         localStorage.removeItem("smarthire_active_provider");
       }
 
-      setMessage(`${PROVIDER_INFO[provider].name} disconnected.`);
-
       await loadSettings();
+
+      showPopup("success", `${PROVIDER_INFO[provider].name} disconnected.`);
     } catch (err) {
-      setError(err.message || "Failed to disconnect provider.");
+      showPopup("error", err.message || "Failed to disconnect provider.");
     } finally {
       setSavingProvider(null);
     }
   }
 
-  if (loading) {
+  if (loading && providers.length === 0) {
     return (
       <div className="settings-page">
         <div className="settings-loading">Loading AI settings...</div>
@@ -207,20 +224,6 @@ export default function Settings() {
   return (
     <div className="mx-auto max-w-7xl px-2 settings-page">
       <div className="settings-container">
-        {error && (
-          <div className="settings-alert settings-alert-error">
-            <XCircle size={16} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {message && (
-          <div className="settings-alert settings-alert-success">
-            <CheckCircle2 size={16} />
-            <span>{message}</span>
-          </div>
-        )}
-
         {/* Provider Selection */}
 
         <section className="settings-section">
@@ -512,6 +515,41 @@ export default function Settings() {
           </section>
         )}
       </div>
+
+      {/* Centered popup */}
+
+      {popup && (
+        <div className="settings-popup-overlay" onClick={closePopup}>
+          <div
+            className={`settings-popup settings-popup-${popup.type}`}
+            role="alertdialog"
+            aria-live="assertive"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="settings-popup-icon">
+              {popup.type === "error" ? (
+                <XCircle size={28} />
+              ) : (
+                <CheckCircle2 size={28} />
+              )}
+            </div>
+
+            <h3>
+              {popup.type === "error" ? "Something went wrong" : "Success"}
+            </h3>
+
+            <p>{popup.text}</p>
+
+            <button
+              type="button"
+              className="settings-popup-button"
+              onClick={closePopup}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

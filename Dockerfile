@@ -6,12 +6,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
 
+# ============================================================
+# System dependencies
+# ============================================================
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     g++ \
     curl \
     git \
+    default-jre-headless \
     libglib2.0-0 \
     libnss3 \
     libnspr4 \
@@ -40,6 +45,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+
+# ============================================================
+# Python dependencies
+# ============================================================
+
 COPY requirements.txt /app/requirements.txt
 
 RUN pip install --upgrade pip && \
@@ -47,18 +57,46 @@ RUN pip install --upgrade pip && \
         --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r /app/requirements.txt
 
+
+# ============================================================
+# Verify PyTorch CPU installation
+# ============================================================
+
 RUN python -c "import torch; print('Torch:', torch.__version__); print('CUDA available:', torch.cuda.is_available()); assert '+cpu' in torch.__version__; assert not torch.cuda.is_available()"
 
 
+# ============================================================
+# Verify Java for LanguageTool
+# ============================================================
+
+RUN java -version
+
+
+# ============================================================
+# spaCy models
+# ============================================================
 
 RUN python -m spacy download en_core_web_sm && \
     python -m spacy download en_core_web_md
 
 
+# ============================================================
+# Playwright
+# ============================================================
+
 RUN playwright install chromium
 
 
+# ============================================================
+# Application
+# ============================================================
+
 COPY backend /app/backend
+
+
+# ============================================================
+# Non-root user
+# ============================================================
 
 RUN useradd \
     --create-home \
@@ -68,7 +106,15 @@ RUN useradd \
 
 USER appuser
 
+RUN java -version
+
+RUN python -c "import language_tool_python; print('LanguageTool Python installed successfully')"
 WORKDIR /app
+
+
+# ============================================================
+# Network / health
+# ============================================================
 
 EXPOSE 8000
 
@@ -78,5 +124,9 @@ HEALTHCHECK --interval=30s \
     --retries=3 \
     CMD curl -f http://127.0.0.1:8000/api/v1/health || exit 1
 
+
+# ============================================================
+# Start FastAPI
+# ============================================================
 
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

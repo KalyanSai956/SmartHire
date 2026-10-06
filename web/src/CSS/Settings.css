@@ -352,29 +352,116 @@
 }
 
 /* =========================================================
-   ALERTS
+   CENTER POPUP
    ========================================================= */
 
-.settings-alert {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 12px;
+.settings-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(3px);
+  animation: popup-fade 0.18s ease;
 }
 
-.settings-alert-error {
-  border: 1px solid #f1cccc;
-  background: #fff6f6;
+.settings-popup {
+  width: min(380px, 100%);
+  padding: 28px 24px 22px;
+  text-align: center;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  animation: popup-pop 0.2s ease;
+}
+
+.settings-popup-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.settings-popup-error .settings-popup-icon {
+  background: #fff1f1;
   color: #b42318;
 }
 
-.settings-alert-success {
-  border: 1px solid #c8e9d5;
-  background: #f1fbf5;
+.settings-popup-success .settings-popup-icon {
+  background: #eaf8f0;
   color: #18794e;
+}
+
+.settings-popup h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.settings-popup p {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #64748b;
+}
+
+.settings-popup-button {
+  min-width: 100px;
+  min-height: 36px;
+  padding: 0 20px;
+  border: 1px solid #002a9d;
+  border-radius: 8px;
+  background: #002a9d;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.settings-popup-button:hover {
+  background: #001f75;
+}
+
+.settings-popup-error .settings-popup-button {
+  border-color: #b42318;
+  background: #b42318;
+}
+
+.settings-popup-error .settings-popup-button:hover {
+  background: #912018;
+}
+
+@keyframes popup-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes popup-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-popup-overlay,
+  .settings-popup {
+    animation: none;
+  }
 }
 
 /* =========================================================

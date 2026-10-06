@@ -251,7 +251,7 @@ SmartHire_ATS/
 
 <div align="center">
 
-**Built by [Kalyan Sai](https://github.com/KalyanSai956)**
+**Built by [P Sai Kalyan](https://github.com/KalyanSai956)**
 
 If you find this project useful, consider giving it a ⭐
 

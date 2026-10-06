@@ -76,16 +76,26 @@ def with_fallback(
             raise
 
 def get_default_grammar_results() -> Dict:
+    """
+    Safe fallback when grammar checking is unavailable.
+
+    IMPORTANT:
+    Unavailable is NOT the same as error-free.
+    """
+
     return {
-        'total_errors':         0,
-        'critical_errors':      [],
-        'moderate_errors':      [],
-        'minor_errors':         [],
-        'grammar_score':        100,
-        'penalty_applied':      0,
-        'error_free_percentage': 100,
-        '_component_status':    'unavailable',
-        '_note': 'Grammar checking unavailable.'
+        'total_errors': 0,
+
+        'critical_errors': [],
+        'moderate_errors': [],
+        'minor_errors': [],
+
+        'grammar_score': None,
+        'penalty_applied': 0.0,
+        'error_free_percentage': None,
+
+        '_component_status': 'unavailable',
+        '_note': 'Grammar checking unavailable.',
     }
 
 def get_default_location_results() -> Dict:

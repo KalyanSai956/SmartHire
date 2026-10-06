@@ -1,6 +1,13 @@
 from datetime import datetime
+
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel,Field
+
+from pydantic import BaseModel, Field
+
+
+# ============================================================
+# COMPONENT SCORES
+# ============================================================
 
 class ComponentScores(BaseModel):
     formatting: float
@@ -9,6 +16,11 @@ class ComponentScores(BaseModel):
     skill_validation: float
     ats_compatibility: float
 
+
+# ============================================================
+# JD COMPARISON
+# ============================================================
+
 class JDComparison(BaseModel):
     match_percentage: float
     semantic_similarity: float
@@ -16,12 +28,28 @@ class JDComparison(BaseModel):
     missing_keywords: List[str]
     skills_gap: List[str]
 
+
+# ============================================================
+# SKILL VALIDATION
+# ============================================================
+
 class SkillValidationDetails(BaseModel):
-    validated: List[Dict[str, Any]] = []       # [{'skill': str, 'projects': [str]}]
-    unvalidated: List[str] = []                # ['Flask', 'A/B Testing', ...]
+    validated: List[Dict[str, Any]] = Field(
+        default_factory=list
+    )
+
+    unvalidated: List[str] = Field(
+        default_factory=list
+    )
+
     total: int = 0
     validated_count: int = 0
     validation_pct: float = 0.0
+
+
+# ============================================================
+# ISSUE DETAILS
+# ============================================================
 
 class IssueDetail(BaseModel):
     issue_title: str
@@ -30,8 +58,81 @@ class IssueDetail(BaseModel):
     explanation: str
     where_it_appears: str
     how_to_fix: str
-    action_items: List[str] = []
+
+    action_items: List[str] = Field(
+        default_factory=list
+    )
+
     example_improvement: str
+
+
+# ============================================================
+# GRAMMAR & SPELLING
+# ============================================================
+
+class GrammarErrorDetail(BaseModel):
+    """
+    One LanguageTool grammar/spelling finding.
+    """
+
+    error_text: str
+
+    message: str = ""
+
+    suggestions: List[str] = Field(
+        default_factory=list
+    )
+
+    severity: str = ""
+
+    rule_id: str = ""
+
+    issue_type: str = ""
+
+    category: str = ""
+
+    offset: int = 0
+
+    length: int = 0
+
+
+class GrammarAnalysis(BaseModel):
+    """
+    Complete grammar and spelling analysis.
+
+    This model is intentionally separate from ATS scoring so the
+    frontend can display the actual detected errors.
+    """
+
+    total_errors: int = 0
+
+    critical_errors: List[GrammarErrorDetail] = Field(
+        default_factory=list
+    )
+
+    moderate_errors: List[GrammarErrorDetail] = Field(
+        default_factory=list
+    )
+
+    minor_errors: List[GrammarErrorDetail] = Field(
+        default_factory=list
+    )
+
+    grammar_score: Optional[float] = None
+
+    penalty_applied: float = 0.0
+
+    error_free_percentage: Optional[float] = None
+
+    # Internal status values from grammar_checker.py
+    component_status: Optional[str] = None
+
+    note: Optional[str] = None
+
+
+# ============================================================
+# RESUME CONTACT
+# ============================================================
 
 class ResumeContact(BaseModel):
     name: Optional[str] = None
@@ -42,6 +143,9 @@ class ResumeContact(BaseModel):
     portfolio: Optional[str] = None
 
 
+# ============================================================
+# RESUME EDUCATION
+# ============================================================
 
 class ResumeEducation(BaseModel):
     institution: Optional[str] = None
@@ -53,22 +157,45 @@ class ResumeEducation(BaseModel):
     grade: Optional[str] = None
 
 
+# ============================================================
+# RESUME EXPERIENCE
+# ============================================================
+
 class ResumeExperience(BaseModel):
     company: Optional[str] = None
     role: Optional[str] = None
     location: Optional[str] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-    bullets: List[str] = Field(default_factory=list)
 
+    bullets: List[str] = Field(
+        default_factory=list
+    )
+
+
+# ============================================================
+# RESUME PROJECT
+# ============================================================
 
 class ResumeProject(BaseModel):
     name: Optional[str] = None
-    technologies: List[str] = Field(default_factory=list)
+
+    technologies: List[str] = Field(
+        default_factory=list
+    )
+
     description: Optional[str] = None
-    bullets: List[str] = Field(default_factory=list)
+
+    bullets: List[str] = Field(
+        default_factory=list
+    )
+
     url: Optional[str] = None
 
+
+# ============================================================
+# RESUME CERTIFICATION
+# ============================================================
 
 class ResumeCertification(BaseModel):
     name: Optional[str] = None
@@ -77,26 +204,56 @@ class ResumeCertification(BaseModel):
     url: Optional[str] = None
 
 
+# ============================================================
+# RESUME ACHIEVEMENT
+# ============================================================
+
 class ResumeAchievement(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     date: Optional[str] = None
+
+
+# ============================================================
+# RESUME PROFILE
+# ============================================================
+
 class ResumeProfile(BaseModel):
-    contact: ResumeContact = Field(default_factory=ResumeContact)
+    contact: ResumeContact = Field(
+        default_factory=ResumeContact
+    )
 
     summary: Optional[str] = None
 
-    education: List[ResumeEducation] = Field(default_factory=list)
+    education: List[ResumeEducation] = Field(
+        default_factory=list
+    )
 
-    experience: List[ResumeExperience] = Field(default_factory=list)
+    experience: List[ResumeExperience] = Field(
+        default_factory=list
+    )
 
-    projects: List[ResumeProject] = Field(default_factory=list)
+    projects: List[ResumeProject] = Field(
+        default_factory=list
+    )
 
-    skills: List[str] = Field(default_factory=list)
+    skills: List[str] = Field(
+        default_factory=list
+    )
 
-    certifications: List[ResumeCertification] = Field(default_factory=list)
+    certifications: List[ResumeCertification] = Field(
+        default_factory=list
+    )
 
-    achievements: List[ResumeAchievement] = Field(default_factory=list)
+    achievements: List[ResumeAchievement] = Field(
+        default_factory=list
+    )
+
+
+# ============================================================
+# RESUME QUALITY
+# ============================================================
+
 class ResumeQualityFinding(BaseModel):
     category: str
     severity: str
@@ -113,24 +270,54 @@ class ResumeQualityResult(BaseModel):
     skills_score: int
     content_score: int
 
-    strengths: List[str] = Field(default_factory=list)
-    weaknesses: List[str] = Field(default_factory=list)
-    recommendations: List[str] = Field(default_factory=list)
+    strengths: List[str] = Field(
+        default_factory=list
+    )
 
-    findings: List[ResumeQualityFinding] = Field(default_factory=list)
+    weaknesses: List[str] = Field(
+        default_factory=list
+    )
+
+    recommendations: List[str] = Field(
+        default_factory=list
+    )
+
+    findings: List[ResumeQualityFinding] = Field(
+        default_factory=list
+    )
 
     metrics_count: int = 0
+
     bullet_count: int = 0
+
     quantified_bullet_count: int = 0
 
+
+# ============================================================
+# ATS KEYWORD ANALYSIS
+# ============================================================
+
 class ATSKeywordAnalysis(BaseModel):
-    required_keywords: List[str] = Field(default_factory=list)
-    matched_keywords: List[str] = Field(default_factory=list)
-    missing_keywords: List[str] = Field(default_factory=list)
+    required_keywords: List[str] = Field(
+        default_factory=list
+    )
+
+    matched_keywords: List[str] = Field(
+        default_factory=list
+    )
+
+    missing_keywords: List[str] = Field(
+        default_factory=list
+    )
 
     total_keywords: int = 0
+
     match_percentage: int = 0
 
+
+# ============================================================
+# ATS SCORE BREAKDOWN
+# ============================================================
 
 class ATSScoreBreakdown(BaseModel):
     keyword_match: int = 0
@@ -141,21 +328,44 @@ class ATSScoreBreakdown(BaseModel):
     resume_quality: int = 0
 
 
+# ============================================================
+# ADVANCED ATS RESULT
+# ============================================================
+
 class AdvancedATSResult(BaseModel):
     ats_score: int
+
     jd_match: int
 
     score_breakdown: ATSScoreBreakdown
 
     keyword_analysis: ATSKeywordAnalysis
 
-    matched_skills: List[str] = Field(default_factory=list)
-    missing_skills: List[str] = Field(default_factory=list)
+    matched_skills: List[str] = Field(
+        default_factory=list
+    )
 
-    matched_experience_terms: List[str] = Field(default_factory=list)
-    matched_project_terms: List[str] = Field(default_factory=list)
+    missing_skills: List[str] = Field(
+        default_factory=list
+    )
 
-    explanation: List[str] = Field(default_factory=list)
+    matched_experience_terms: List[str] = Field(
+        default_factory=list
+    )
+
+    matched_project_terms: List[str] = Field(
+        default_factory=list
+    )
+
+    explanation: List[str] = Field(
+        default_factory=list
+    )
+
+
+# ============================================================
+# JD REQUIREMENTS
+# ============================================================
+
 class JDRequirement(BaseModel):
     requirement: str
     category: str
@@ -169,21 +379,36 @@ class JDExperienceRequirement(BaseModel):
     raw_text: Optional[str] = None
 
 
+# ============================================================
+# JD INTELLIGENCE
+# ============================================================
+
 class JDIntelligenceResult(BaseModel):
     job_title: Optional[str] = None
+
     seniority: Optional[str] = None
+
     domain: Optional[str] = None
 
-    required_skills: List[str] = Field(default_factory=list)
-    preferred_skills: List[str] = Field(default_factory=list)
+    required_skills: List[str] = Field(
+        default_factory=list
+    )
 
-    responsibilities: List[str] = Field(default_factory=list)
+    preferred_skills: List[str] = Field(
+        default_factory=list
+    )
+
+    responsibilities: List[str] = Field(
+        default_factory=list
+    )
 
     experience_requirement: JDExperienceRequirement = Field(
         default_factory=JDExperienceRequirement
     )
 
-    education_requirements: List[str] = Field(default_factory=list)
+    education_requirements: List[str] = Field(
+        default_factory=list
+    )
 
     technical_requirements: List[JDRequirement] = Field(
         default_factory=list
@@ -193,19 +418,55 @@ class JDIntelligenceResult(BaseModel):
         default_factory=list
     )
 
-    keywords: List[str] = Field(default_factory=list)
+    keywords: List[str] = Field(
+        default_factory=list
+    )
 
     must_have_count: int = 0
+
     preferred_count: int = 0
 
     jd_quality_score: int = 0
 
-    strengths: List[str] = Field(default_factory=list)
-    weaknesses: List[str] = Field(default_factory=list)
+    strengths: List[str] = Field(
+        default_factory=list
+    )
+
+    weaknesses: List[str] = Field(
+        default_factory=list
+    )
+
+class GrammarError(BaseModel):
+    error_text: str
+    suggestions: List[str] = Field(default_factory=list)
+    message: str = ""
+    rule_id: str = ""
+    category: str = ""
+    issue_type: str = ""
+    offset: int = 0
+    length: int = 0
+    severity: str = "minor"
+
+
+class GrammarAnalysis(BaseModel):
+    total_errors: int = 0
+    critical_errors: List[GrammarError] = Field(default_factory=list)
+    moderate_errors: List[GrammarError] = Field(default_factory=list)
+    minor_errors: List[GrammarError] = Field(default_factory=list)
+    grammar_score: Optional[float] = None
+    penalty_applied: float = 0.0
+    error_free_percentage: Optional[float] = None
+    component_status: Optional[str] = None
+    note: Optional[str] = None
+# ============================================================
+# ANALYSIS RESPONSE
+# ============================================================
+
 class AnalysisResponse(BaseModel):
-    # ============================================================
+
+    # ========================================================
     # Existing response fields
-    # ============================================================
+    # ========================================================
 
     ATS_score: float
 
@@ -217,44 +478,77 @@ class AnalysisResponse(BaseModel):
 
     jd_match_analysis: Optional[JDComparison] = None
 
-    skill_validation_details: Optional[SkillValidationDetails] = None
+    skill_validation_details: Optional[
+        SkillValidationDetails
+    ] = None
 
-    # ============================================================
+    # ========================================================
+    # GRAMMAR & SPELLING
+    # ========================================================
+
+    grammar_analysis: Optional[GrammarAnalysis] = None
+
     # Backward compatibility
-    # ============================================================
+    grammar_results: Optional[GrammarAnalysis] = None
+
+    # ========================================================
+    # Backward compatibility
+    # ========================================================
 
     ats_score: float
 
     keyword_match: float = 0.0
 
-    missing_keywords: List[str] = Field(default_factory=list)
+    missing_keywords: List[str] = Field(
+        default_factory=list
+    )
 
-    matched_keywords: List[str] = Field(default_factory=list)
+    matched_keywords: List[str] = Field(
+        default_factory=list
+    )
 
-    suggestions: List[str] = Field(default_factory=list)
+    suggestions: List[str] = Field(
+        default_factory=list
+    )
 
-    strengths: List[str] = Field(default_factory=list)
+    strengths: List[str] = Field(
+        default_factory=list
+    )
 
-    critical_issues: List[str] = Field(default_factory=list)
+    critical_issues: List[str] = Field(
+        default_factory=list
+    )
 
-    skills: List[str] = Field(default_factory=list)
+    skills: List[str] = Field(
+        default_factory=list
+    )
 
     jd_comparison: Optional[JDComparison] = None
 
-    warnings: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(
+        default_factory=list
+    )
 
     interpretation: str = ""
 
-    # ============================================================
+    # ========================================================
     # Phase 3D — Advanced ATS
-    # ============================================================
+    # ========================================================
 
     advanced_ats: Optional[AdvancedATSResult] = None
 
     resume_quality: Optional[ResumeQualityResult] = None
 
     resume_profile: Optional[ResumeProfile] = None
-    jd_intelligence: Optional[JDIntelligenceResult] = None
+
+    jd_intelligence: Optional[
+        JDIntelligenceResult
+    ] = None
+
+
+# ============================================================
+# CAREER PROFILE
+# ============================================================
 
 class CareerProfile(BaseModel):
     username: str
@@ -286,6 +580,10 @@ class CareerProfile(BaseModel):
     onboarding_completed: bool = False
 
 
+# ============================================================
+# CAREER PROFILE UPDATE
+# ============================================================
+
 class CareerProfileUpdate(BaseModel):
     username: str
 
@@ -308,6 +606,12 @@ class CareerProfileUpdate(BaseModel):
     experience: str = ""
 
     graduation_year: Optional[int] = None
+
+
+# ============================================================
+# ONBOARDING PROGRESS
+# ============================================================
+
 class OnboardingProgressUpdate(BaseModel):
     step: int
 
@@ -324,6 +628,11 @@ class OnboardingProgressUpdate(BaseModel):
     experience: Optional[str] = None
 
     graduation_year: Optional[int] = None
+
+
+# ============================================================
+# CAREER PROFILE RESPONSE
+# ============================================================
 
 class CareerProfileResponse(BaseModel):
     user_id: str
@@ -357,27 +666,56 @@ class CareerProfileResponse(BaseModel):
     onboarding_completed: bool = False
 
 
+# ============================================================
+# PHASE 3 JD EXPERIENCE REQUIREMENT
+# ============================================================
+
 class JDExperienceRequirement(BaseModel):
     required: bool = False
+
     minimum_years: Optional[float] = None
+
     maximum_years: Optional[float] = None
+
     raw_text: Optional[str] = None
 
+
+# ============================================================
+# PHASE 3 JD EDUCATION REQUIREMENT
+# ============================================================
 
 class JDEducationRequirement(BaseModel):
     required: bool = False
-    degrees: List[str] = Field(default_factory=list)
-    fields: List[str] = Field(default_factory=list)
+
+    degrees: List[str] = Field(
+        default_factory=list
+    )
+
+    fields: List[str] = Field(
+        default_factory=list
+    )
+
     raw_text: Optional[str] = None
 
+
+# ============================================================
+# PHASE 3 JD INTELLIGENCE
+# ============================================================
 
 class JDIntelligenceResult(BaseModel):
     role_title: Optional[str] = None
 
-    required_skills: List[str] = Field(default_factory=list)
-    preferred_skills: List[str] = Field(default_factory=list)
+    required_skills: List[str] = Field(
+        default_factory=list
+    )
 
-    technical_concepts: List[str] = Field(default_factory=list)
+    preferred_skills: List[str] = Field(
+        default_factory=list
+    )
+
+    technical_concepts: List[str] = Field(
+        default_factory=list
+    )
 
     experience: JDExperienceRequirement = Field(
         default_factory=JDExperienceRequirement
@@ -387,28 +725,54 @@ class JDIntelligenceResult(BaseModel):
         default_factory=JDEducationRequirement
     )
 
-    responsibilities: List[str] = Field(default_factory=list)
+    responsibilities: List[str] = Field(
+        default_factory=list
+    )
 
-    role_signals: List[str] = Field(default_factory=list)
+    role_signals: List[str] = Field(
+        default_factory=list
+    )
 
-    required_keywords: List[str] = Field(default_factory=list)
+    required_keywords: List[str] = Field(
+        default_factory=list
+    )
 
-    preferred_keywords: List[str] = Field(default_factory=list)
+    preferred_keywords: List[str] = Field(
+        default_factory=list
+    )
 
     total_required_items: int = 0
+
     total_preferred_items: int = 0
 
 
+# ============================================================
+# RECOMMENDATION ITEM
+# ============================================================
+
 class RecommendationItem(BaseModel):
     priority: str
+
     category: str
+
     title: str
+
     recommendation: str
+
     reason: str
-    evidence: List[str] = Field(default_factory=list)
+
+    evidence: List[str] = Field(
+        default_factory=list
+    )
+
     action: str
+
     estimated_impact: str
 
+
+# ============================================================
+# AI RECOMMENDATIONS
+# ============================================================
 
 class AIRecommendationResult(BaseModel):
     summary: str
@@ -426,5 +790,3 @@ class AIRecommendationResult(BaseModel):
     )
 
     total_recommendations: int = 0
-
-

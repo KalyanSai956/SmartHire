@@ -315,6 +315,128 @@ function buildActionItems(analysis, detailedFeedback, criticalIssues) {
 }
 
 /* =========================================================
+   GRAMMAR HELPERS (display only)
+   ========================================================= */
+
+const GRAMMAR_SECTIONS = [
+  {
+    key: "critical",
+    title: "Critical errors",
+    description: "Fix these first. They hurt readability and recruiter trust.",
+  },
+  {
+    key: "moderate",
+    title: "Moderate errors",
+    description: "Noticeable mistakes that are worth correcting.",
+  },
+  {
+    key: "minor",
+    title: "Minor suggestions",
+    description: "Small polish items and style tweaks.",
+  },
+];
+
+function grammarSeverity(item, fallback = "minor") {
+  const label = firstText(item, [
+    "severity",
+    "level",
+    "priority",
+    "category",
+    "type",
+  ]).toLowerCase();
+
+  if (/crit|high|major|severe/.test(label)) return "critical";
+  if (/mod|medium|warn/.test(label)) return "moderate";
+  if (label) return "minor";
+
+  return fallback;
+}
+
+function grammarErrorItem(raw) {
+  if (typeof raw === "string") {
+    return { original: raw.trim(), suggestion: "", message: "", context: "" };
+  }
+
+  const firstSuggestion = Array.isArray(raw?.suggestions)
+    ? text(raw.suggestions[0])
+    : "";
+
+  return {
+    original: firstText(raw, [
+      "original",
+      "error",
+      "incorrect",
+      "word",
+      "text",
+      "phrase",
+      "match",
+    ]),
+    suggestion:
+      firstText(raw, [
+        "suggestion",
+        "correction",
+        "replacement",
+        "corrected",
+        "fix",
+        "correct",
+      ]) || firstSuggestion,
+    message: firstText(raw, [
+      "message",
+      "description",
+      "explanation",
+      "reason",
+      "rule",
+    ]),
+    context: firstText(raw, ["context", "sentence"]),
+  };
+}
+
+function normalizeGrammarErrors(grammar) {
+  const buckets = { critical: [], moderate: [], minor: [] };
+
+  if (!grammar || typeof grammar !== "object") return buckets;
+
+  const flat =
+    grammar.errors ??
+    grammar.issues ??
+    grammar.details ??
+    grammar.matches ??
+    grammar.error_list ??
+    grammar.errorList;
+
+  if (Array.isArray(flat)) {
+    for (const raw of flat) {
+      buckets[grammarSeverity(raw)].push(grammarErrorItem(raw));
+    }
+  } else if (flat && typeof flat === "object") {
+    for (const key of Object.keys(buckets)) {
+      if (Array.isArray(flat[key])) {
+        buckets[key] = flat[key].map(grammarErrorItem);
+      }
+    }
+  }
+
+  const found = Object.values(buckets).some((list) => list.length);
+
+  if (!found) {
+    for (const key of Object.keys(buckets)) {
+      const list =
+        [
+          grammar[`${key}_errors`],
+          grammar[`${key}_issues`],
+          grammar[`${key}Errors`],
+          grammar[`${key}_list`],
+          grammar[key],
+        ].find((value) => Array.isArray(value)) || [];
+
+      buckets[key] = list.map(grammarErrorItem);
+    }
+  }
+
+  return buckets;
+}
+
+/* =========================================================
    COMPONENT
    ========================================================= */
 
@@ -920,6 +1042,7 @@ export default function Analysis() {
       criticalGrammarErrors,
       moderateGrammarErrors,
       minorGrammarErrors,
+      grammarErrors: normalizeGrammarErrors(grammar),
 
       atsCompatibilityScore,
       formattingScore,
@@ -1084,8 +1207,23 @@ export default function Analysis() {
 
   const score = data.score;
 
+  const grammarSegments = [
+    { key: "critical", label: "Critical", count: data.criticalGrammarErrors },
+    { key: "moderate", label: "Moderate", count: data.moderateGrammarErrors },
+    { key: "minor", label: "Minor", count: data.minorGrammarErrors },
+  ];
+
+  const grammarSegmentTotal = grammarSegments.reduce(
+    (sum, item) => sum + (Number(item.count) || 0),
+    0,
+  );
+
+  const hasGrammarDetails = GRAMMAR_SECTIONS.some(
+    (section) => data.grammarErrors[section.key].length > 0,
+  );
+
   return (
-    <div className="mx-auto max-w-5xl px-6 py-5 page-shell analysis-page">
+    <div className="mx-auto max-w-5xl px-6 page-shell analysis-page">
       {/* =====================================================
           TOP BAR
           ===================================================== */}
@@ -1095,17 +1233,20 @@ export default function Analysis() {
           <ArrowLeft size={15} />
           Back to History
         </Link>
-        <button
-          className="button secondary"
-          onClick={downloadReport}
-          disabled={pdfBusy}
-        >
-          <Download size={16} />
 
-          {pdfBusy ? "Generating..." : "Download Report"}
-        </button>
+        <div className="result-topbar-right">
+          <p>{filename}</p>
 
-        <p>{filename}</p>
+          <button
+            className="button secondary"
+            onClick={downloadReport}
+            disabled={pdfBusy}
+          >
+            <Download size={16} />
+
+            {pdfBusy ? "Generating..." : "Download Report"}
+          </button>
+        </div>
       </div>
 
       {error && <div className="inline-error">{error}</div>}
@@ -1757,10 +1898,20 @@ export default function Analysis() {
       <div className="analysis-bottom-grid">
         {/* GRAMMAR */}
 
-        <section className="analysis-card panel">
+        <section className="analysis-card panel grammar-analysis-card">
           <div className="analysis-card-header">
             <div>
               <span className="section-kicker">GRAMMAR & SPELLING</span>
+
+              <h2>Language Quality</h2>
+
+              <p>
+                {data.totalGrammarErrors === 0
+                  ? "No grammar or spelling errors were found in your resume."
+                  : `${data.totalGrammarErrors} issue${
+                      data.totalGrammarErrors === 1 ? "" : "s"
+                    } found across your resume.`}
+              </p>
             </div>
 
             <span
@@ -1782,43 +1933,147 @@ export default function Analysis() {
             </div>
 
             <div>
-              <span>Critical Errors</span>
+              <span>Critical</span>
 
-              <strong>{data.criticalGrammarErrors}</strong>
+              <strong className="grammar-critical-number">
+                {data.criticalGrammarErrors}
+              </strong>
             </div>
 
             <div>
-              <span>Moderate Errors</span>
+              <span>Moderate</span>
 
-              <strong>{data.moderateGrammarErrors}</strong>
+              <strong className="grammar-moderate-number">
+                {data.moderateGrammarErrors}
+              </strong>
             </div>
 
             <div>
-              <span>Minor Errors</span>
+              <span>Minor</span>
 
-              <strong>{data.minorGrammarErrors}</strong>
+              <strong className="grammar-minor-number">
+                {data.minorGrammarErrors}
+              </strong>
             </div>
           </div>
 
-          <div
-            className={
-              data.totalGrammarErrors === 0
-                ? "analysis-status success"
-                : "analysis-status warning"
-            }
-          >
-            {data.totalGrammarErrors === 0 ? (
-              <>
-                <CheckCircle2 size={18} />
+          {grammarSegmentTotal > 0 && (
+            <div className="grammar-distribution">
+              <div
+                className="grammar-distribution-bar"
+                role="img"
+                aria-label="Error severity distribution"
+              >
+                {grammarSegments.map((item) =>
+                  Number(item.count) > 0 ? (
+                    <span
+                      key={item.key}
+                      className={item.key}
+                      style={{
+                        width: `${(Number(item.count) / grammarSegmentTotal) * 100}%`,
+                      }}
+                    />
+                  ) : null,
+                )}
+              </div>
 
-                <div>
-                  <strong>CLEAN</strong>
+              <div className="grammar-distribution-legend">
+                {grammarSegments.map((item) => (
+                  <span key={item.key}>
+                    <i className={item.key} />
+                    {item.label}
+                    <b>
+                      {Math.round(
+                        ((Number(item.count) || 0) / grammarSegmentTotal) * 100,
+                      )}
+                      %
+                    </b>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
-                  <p>No grammar or spelling errors detected.</p>
+          {GRAMMAR_SECTIONS.map((section) => {
+            const list = data.grammarErrors[section.key];
+
+            if (!list.length) return null;
+
+            return (
+              <div className="grammar-error-section" key={section.key}>
+                <div className={`grammar-error-section-header ${section.key}`}>
+                  <div>
+                    <h3>{section.title}</h3>
+
+                    <p>{section.description}</p>
+                  </div>
+
+                  <span>{list.length}</span>
                 </div>
-              </>
-            ) : (
-              <>
+
+                <div className="grammar-error-list">
+                  {list.map((error, index) => (
+                    <div
+                      className={`grammar-error-item ${section.key}`}
+                      key={index}
+                    >
+                      <div className="grammar-error-main">
+                        <span className="grammar-error-number">
+                          {index + 1}
+                        </span>
+
+                        <div className="grammar-error-content">
+                          <div className="grammar-error-correction">
+                            <strong>
+                              {error.original ||
+                                error.suggestion ||
+                                error.message ||
+                                `Issue ${index + 1}`}
+                            </strong>
+
+                            {error.original && error.suggestion && (
+                              <>
+                                <ArrowRight size={14} />
+
+                                <strong className="grammar-suggestion">
+                                  {error.suggestion}
+                                </strong>
+                              </>
+                            )}
+                          </div>
+
+                          {error.message &&
+                            error.message !== error.original && (
+                              <p>{error.message}</p>
+                            )}
+
+                          {error.context && (
+                            <blockquote className="grammar-error-context">
+                              {error.context}
+                            </blockquote>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {data.totalGrammarErrors === 0 ? (
+            <div className="grammar-clean-result">
+              <CheckCircle2 size={20} />
+
+              <div>
+                <strong>All clear</strong>
+
+                <p>No grammar or spelling errors detected.</p>
+              </div>
+            </div>
+          ) : (
+            !hasGrammarDetails && (
+              <div className="analysis-status warning grammar-review-note">
                 <AlertCircle size={18} />
 
                 <div>
@@ -1826,9 +2081,9 @@ export default function Analysis() {
 
                   <p>Grammar or spelling issues were detected.</p>
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+            )
+          )}
         </section>
 
         {/* LEGACY COMPATIBILITY */}
