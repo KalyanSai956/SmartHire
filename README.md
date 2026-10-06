@@ -1,6 +1,6 @@
 <div align="center">
 
-# SmartHire ATS
+# SmartHire
 
 **An AI-powered Applicant Tracking System that analyzes resumes against job descriptions, evaluates resume quality, validates skills, and generates actionable ATS scores.**
 
@@ -227,7 +227,7 @@ uvicorn main:app --reload
 ### 3. Run the frontend
 
 ```bash
-cd frontend
+cd web
 npm install
 npm run dev
 ```
@@ -239,8 +239,8 @@ npm run dev
 ## Project Structure
 
 ```text
-SmartHire_ATS/
-├── frontend/        # React + Vite application
+SmartHire/
+├── web/        # React + Vite application
 ├── backend/         # FastAPI application
 ├── screenshots/     # README images
 ├── docker-compose.yml
