@@ -80,10 +80,6 @@ RUN python -m spacy download en_core_web_sm && \
     python -m spacy download en_core_web_md
 
 
-# ============================================================
-# Playwright
-# ============================================================
-
 RUN playwright install chromium
 
 
