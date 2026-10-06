@@ -21,9 +21,6 @@ from backend.services.ats_scorer import (
     validate_skills_with_projects,
 )
 
-from backend.services.grammar_checker import (
-    check_resume_grammar,
-)
 
 
 async def analyze_full_resume(
@@ -176,62 +173,6 @@ async def analyze_full_resume(
         )
 
     # ------------------------------------------------------------------
-    # 6. REAL grammar + spelling analysis
-    # ------------------------------------------------------------------
-
-    logger.info(
-        "Running grammar/spelling analysis..."
-    )
-
-    grammar_results = await check_resume_grammar(
-        resume_text
-    )
-    logger.warning(
-    "========== GRAMMAR DEBUG =========="
-)
-
-    logger.warning(
-    "GRAMMAR STATUS: %s",
-    grammar_results.get("_component_status")
-)
-
-    logger.warning(
-    "GRAMMAR TOTAL: %s",
-    grammar_results.get("total_errors")
-)
-
-    logger.warning(
-    "GRAMMAR CRITICAL: %s",
-    grammar_results.get("critical_errors")
-)
-
-    logger.warning(
-    "GRAMMAR MODERATE: %s",
-    grammar_results.get("moderate_errors")
-)
-
-    logger.warning(
-    "GRAMMAR MINOR: %s",
-    grammar_results.get("minor_errors")
-)
-
-    logger.warning(
-    "===================================="
-)
-    logger.info(
-        "Grammar analysis status=%s errors=%s score=%s",
-        grammar_results.get(
-            "_component_status"
-        ),
-        grammar_results.get(
-            "total_errors"
-        ),
-        grammar_results.get(
-            "grammar_score"
-        ),
-    )
-
-    # ------------------------------------------------------------------
     # 7. Location/privacy analysis
     # ------------------------------------------------------------------
 
@@ -248,17 +189,16 @@ async def analyze_full_resume(
     # ------------------------------------------------------------------
 
     scores = calculate_overall_score(
-        text=resume_text,
-        parsed_resume=parsed_resume,
-        skills=skills,
-        keywords=keywords,
-        action_verbs=action_verbs,
-        skill_validation_results=skill_validation,
-        grammar_results=grammar_results,
-        location_results=location_results,
-        jd_keywords=jd_keywords,
-        experience_months=experience_months,
-    )
+    text=resume_text,
+    parsed_resume=parsed_resume,
+    skills=skills,
+    keywords=keywords,
+    action_verbs=action_verbs,
+    skill_validation_results=skill_validation,
+    location_results=location_results,
+    jd_keywords=jd_keywords,
+    experience_months=experience_months,
+)
 
     # ------------------------------------------------------------------
     # 9. Detailed feedback
@@ -370,14 +310,6 @@ async def analyze_full_resume(
         },
 
         # --------------------------------------------------------------
-        # Grammar information
-        # --------------------------------------------------------------
-
-        "grammar_analysis": grammar_results,
-
-        "grammar_results": grammar_results,
-
-        # --------------------------------------------------------------
         # Existing feedback
         # --------------------------------------------------------------
 
@@ -426,14 +358,13 @@ async def analyze_full_resume(
         # --------------------------------------------------------------
 
         "strengths": _generate_strengths(
-            parsed_resume,
-            skills,
-            projects,
-            action_verbs,
-            skill_validation,
-            scores,
-            grammar_results,
-        ),
+    parsed_resume,
+    skills,
+    projects,
+    action_verbs,
+    skill_validation,
+    scores,
+),
 
         "interpretation": scores.get(
             "overall_interpretation",
@@ -461,7 +392,6 @@ def _generate_strengths(
     action_verbs: List,
     skill_validation: Dict,
     scores: Dict,
-    grammar_results: Dict,
 ) -> List[str]:
 
     """Generate strengths based on actual resume analysis."""
@@ -542,22 +472,6 @@ def _generate_strengths(
 
         strengths.append(
             "Content quality is high with measurable achievements"
-        )
-
-    # IMPORTANT:
-    # Only say "error-free" when the checker actually ran.
-    if (
-        grammar_results.get(
-            "_component_status"
-        ) == "available"
-        and grammar_results.get(
-            "total_errors",
-            0,
-        ) == 0
-    ):
-
-        strengths.append(
-            "Error-free grammar and spelling"
         )
 
     return strengths

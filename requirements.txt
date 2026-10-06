@@ -16,6 +16,4 @@ pdfplumber
 PyPDF2
 python-docx
 pypdf
-playwright
 python-multipart
-language-tool-python

@@ -5,6 +5,7 @@ import uuid
 from contextlib import asynccontextmanager
 
 import spacy
+import torch
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -27,9 +28,11 @@ from backend.core.config import (
     APP_VERSION,
     REDIS_ENABLED,
     REDIS_URL,
+    PYTORCH_DEVICE,
+    PYTORCH_NUM_INTEROP_THREADS,
+    PYTORCH_NUM_THREADS,
     SENTENCE_TRANSFORMER_MODEL,
     SPACY_MODEL_PRIMARY,
-    SPACY_MODEL_SECONDARY,
 )
 
 from backend.services.cache.redis_client import (
@@ -39,6 +42,50 @@ from backend.services.cache.redis_client import (
 
 
 logger = logging.getLogger("smarthire")
+
+
+# ================================================================
+# PYTORCH CPU CONFIGURATION
+# ================================================================
+#
+# Configure PyTorch before loading the Sentence Transformer.
+#
+# This prevents PyTorch from trying to use excessive CPU
+# parallelism during embedding inference.
+#
+# SmartHire currently uses all-MiniLM-L6-v2, which is lightweight
+# enough for CPU inference.
+# ================================================================
+
+try:
+
+    torch.set_num_threads(
+        PYTORCH_NUM_THREADS
+    )
+
+    torch.set_num_interop_threads(
+        PYTORCH_NUM_INTEROP_THREADS
+    )
+
+    logger.info(
+        "PyTorch CPU configuration: "
+        "threads=%s interop_threads=%s",
+        PYTORCH_NUM_THREADS,
+        PYTORCH_NUM_INTEROP_THREADS,
+    )
+
+except RuntimeError as exc:
+
+    # PyTorch may reject changing inter-op threads if another
+    # parallel operation has already started.
+    #
+    # This should not normally happen during normal startup,
+    # but the application should remain robust if it does.
+
+    logger.warning(
+        "Could not fully configure PyTorch thread settings: %s",
+        exc,
+    )
 
 
 # ================================================================
@@ -62,6 +109,7 @@ async def lifespan(
     # ============================================================
 
     try:
+
         logger.info(
             "Initializing Redis: enabled=%s url=%s",
             REDIS_ENABLED,
@@ -70,26 +118,34 @@ async def lifespan(
 
         app.state.redis = await create_redis_client()
 
-        if REDIS_ENABLED and app.state.redis is None:
+        if (
+            REDIS_ENABLED
+            and app.state.redis is None
+        ):
             raise RuntimeError(
                 "Redis initialization returned None "
                 "while Redis is enabled."
             )
 
         if app.state.redis is not None:
+
             logger.info(
                 "Redis caching and rate limiting enabled."
             )
+
         else:
+
             logger.info(
                 "Redis is disabled."
             )
 
     except Exception:
+
         logger.exception(
             "Redis initialization failed during "
             "application startup."
         )
+
         raise
 
     # ============================================================
@@ -101,49 +157,56 @@ async def lifespan(
         SPACY_MODEL_PRIMARY,
     )
 
-    try:
-        app.state.nlp = spacy.load(
-            SPACY_MODEL_PRIMARY
-        )
+    app.state.nlp = spacy.load(
+        SPACY_MODEL_PRIMARY
+    )
 
-        logger.info(
-            "Loaded spaCy model: %s",
-            SPACY_MODEL_PRIMARY,
-        )
-
-    except OSError:
-        logger.warning(
-            "%s not found. "
-            "Using fallback model: %s",
-            SPACY_MODEL_PRIMARY,
-            SPACY_MODEL_SECONDARY,
-        )
-
-        app.state.nlp = spacy.load(
-            SPACY_MODEL_SECONDARY
-        )
-
-        logger.info(
-            "Loaded fallback spaCy model: %s",
-            SPACY_MODEL_SECONDARY,
-        )
+    logger.info(
+        "Loaded spaCy model: %s",
+        SPACY_MODEL_PRIMARY,
+    )
 
     # ============================================================
     # Sentence Transformer
     # ============================================================
 
     logger.info(
-        "Loading embedding model: %s",
+        "Loading embedding model: %s device=%s",
         SENTENCE_TRANSFORMER_MODEL,
+        PYTORCH_DEVICE,
     )
 
     app.state.embedder = SentenceTransformer(
-        SENTENCE_TRANSFORMER_MODEL
+        SENTENCE_TRANSFORMER_MODEL,
+        device=PYTORCH_DEVICE,
     )
+
+    # ------------------------------------------------------------
+    # Evaluation mode
+    # ------------------------------------------------------------
+    #
+    # The embedding model is used only for inference.
+    # Training is not performed by SmartHire.
+    #
+    # eval() disables training-specific behavior such as
+    # dropout where applicable.
+    # ------------------------------------------------------------
+
+    app.state.embedder.eval()
 
     logger.info(
         "Loaded embedding model: %s",
         SENTENCE_TRANSFORMER_MODEL,
+    )
+
+    logger.info(
+        "Embedding device: %s",
+        PYTORCH_DEVICE,
+    )
+
+    logger.info(
+        "PyTorch threads: %s",
+        torch.get_num_threads(),
     )
 
     logger.info(
@@ -155,9 +218,11 @@ async def lifespan(
     # ============================================================
 
     try:
+
         yield
 
     finally:
+
         logger.info(
             "Shutting down SmartHire ATS API..."
         )
@@ -169,6 +234,7 @@ async def lifespan(
         )
 
         if redis_client is not None:
+
             await close_redis_client(
                 redis_client
             )
@@ -205,6 +271,7 @@ async def request_context_middleware(
     request: Request,
     call_next,
 ):
+
     incoming_request_id = (
         request.headers.get(
             "X-Request-ID"
@@ -216,6 +283,7 @@ async def request_context_middleware(
     # ------------------------------------------------------------
 
     try:
+
         parsed_request_id = uuid.UUID(
             incoming_request_id
         )
@@ -229,6 +297,7 @@ async def request_context_middleware(
         TypeError,
         AttributeError,
     ):
+
         request_id = str(
             uuid.uuid4()
         )
@@ -240,11 +309,13 @@ async def request_context_middleware(
     # ------------------------------------------------------------
 
     try:
+
         response = await call_next(
             request
         )
 
     except Exception:
+
         logger.exception(
             "Unhandled request failure "
             "request_id=%s path=%s",
@@ -291,13 +362,16 @@ async def request_context_middleware(
 
     # SmartHire responses contain user-specific resume,
     # ATS and authentication-related information.
+
     response.headers[
         "Cache-Control"
     ] = "no-store"
 
     # HSTS should only be enabled in production where
     # the API is served through HTTPS.
+
     if APP_ENV == "production":
+
         response.headers[
             "Strict-Transport-Security"
         ] = (
@@ -340,7 +414,9 @@ app.add_middleware(
 # ROUTERS
 # ================================================================
 
-app.include_router(router)
+app.include_router(
+    router
+)
 
 app.include_router(
     profile_router
@@ -377,6 +453,7 @@ app.include_router(
 
 @app.get("/")
 async def root():
+
     return {
         "name": "SmartHire ATS API",
         "version": APP_VERSION,
@@ -405,6 +482,7 @@ async def root():
 # ================================================================
 
 if __name__ == "__main__":
+
     import uvicorn
 
     uvicorn.run(

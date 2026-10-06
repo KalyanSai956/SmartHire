@@ -231,14 +231,6 @@ function formatPercent(value, decimals = 0) {
   return `${number.toFixed(decimals)}%`;
 }
 
-function scoreLabel(score) {
-  if (score >= 85) return "Strong Resume";
-  if (score >= 70) return "Good Resume";
-  if (score >= 55) return "Fair Resume";
-
-  return "Needs Improvement";
-}
-
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -1250,18 +1242,6 @@ export default function Analysis() {
       </div>
 
       {error && <div className="inline-error">{error}</div>}
-
-      {/* =====================================================
-          HEADER
-          ===================================================== */}
-
-      <section className="result-header">
-        <span className={`success-pill ${scoreStatus(score)}`}>
-          {score >= 70 ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
-
-          {scoreLabel(score)}
-        </span>
-      </section>
 
       {/* =====================================================
           ADVANCED JD PROFILE

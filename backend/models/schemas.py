@@ -66,69 +66,6 @@ class IssueDetail(BaseModel):
     example_improvement: str
 
 
-# ============================================================
-# GRAMMAR & SPELLING
-# ============================================================
-
-class GrammarErrorDetail(BaseModel):
-    """
-    One LanguageTool grammar/spelling finding.
-    """
-
-    error_text: str
-
-    message: str = ""
-
-    suggestions: List[str] = Field(
-        default_factory=list
-    )
-
-    severity: str = ""
-
-    rule_id: str = ""
-
-    issue_type: str = ""
-
-    category: str = ""
-
-    offset: int = 0
-
-    length: int = 0
-
-
-class GrammarAnalysis(BaseModel):
-    """
-    Complete grammar and spelling analysis.
-
-    This model is intentionally separate from ATS scoring so the
-    frontend can display the actual detected errors.
-    """
-
-    total_errors: int = 0
-
-    critical_errors: List[GrammarErrorDetail] = Field(
-        default_factory=list
-    )
-
-    moderate_errors: List[GrammarErrorDetail] = Field(
-        default_factory=list
-    )
-
-    minor_errors: List[GrammarErrorDetail] = Field(
-        default_factory=list
-    )
-
-    grammar_score: Optional[float] = None
-
-    penalty_applied: float = 0.0
-
-    error_free_percentage: Optional[float] = None
-
-    # Internal status values from grammar_checker.py
-    component_status: Optional[str] = None
-
-    note: Optional[str] = None
-
 
 # ============================================================
 # RESUME CONTACT
@@ -436,32 +373,6 @@ class JDIntelligenceResult(BaseModel):
         default_factory=list
     )
 
-class GrammarError(BaseModel):
-    error_text: str
-    suggestions: List[str] = Field(default_factory=list)
-    message: str = ""
-    rule_id: str = ""
-    category: str = ""
-    issue_type: str = ""
-    offset: int = 0
-    length: int = 0
-    severity: str = "minor"
-
-
-class GrammarAnalysis(BaseModel):
-    total_errors: int = 0
-    critical_errors: List[GrammarError] = Field(default_factory=list)
-    moderate_errors: List[GrammarError] = Field(default_factory=list)
-    minor_errors: List[GrammarError] = Field(default_factory=list)
-    grammar_score: Optional[float] = None
-    penalty_applied: float = 0.0
-    error_free_percentage: Optional[float] = None
-    component_status: Optional[str] = None
-    note: Optional[str] = None
-# ============================================================
-# ANALYSIS RESPONSE
-# ============================================================
-
 class AnalysisResponse(BaseModel):
 
     # ========================================================
@@ -482,14 +393,6 @@ class AnalysisResponse(BaseModel):
         SkillValidationDetails
     ] = None
 
-    # ========================================================
-    # GRAMMAR & SPELLING
-    # ========================================================
-
-    grammar_analysis: Optional[GrammarAnalysis] = None
-
-    # Backward compatibility
-    grammar_results: Optional[GrammarAnalysis] = None
 
     # ========================================================
     # Backward compatibility

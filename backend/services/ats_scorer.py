@@ -5,7 +5,7 @@ from sentence_transformers import SentenceTransformer
 from typing import Dict, List, Optional, Tuple
 
 from backend.utils.file_utils import log_warning
-from backend.core.config import SENTENCE_TRANSFORMER_MODEL
+from backend.core.config import SENTENCE_TRANSFORMER_BATCH_SIZE
 from backend.utils.matching import fuzzy_match_keywords
 
 ZIP_CODE_PATTERN = r'\b\d{5}(?:-\d{4})?\b'
@@ -72,32 +72,63 @@ def detect_location_info(text: str, nlp: spacy.Language) -> Dict:
         'penalty_applied':    penalty,
     }
 
-def _calculate_semantic_similarity(skill: str, text: str, embedder: SentenceTransformer) -> float:
-    #similarity = (A · B) / (|A| × |B|)
+def _calculate_semantic_similarity(
+    skill: str,
+    text: str,
+    embedder: SentenceTransformer,
+) -> float:
+
     if not skill or not text:
         return 0.0
-    try:
-        skill_vec  = embedder.encode(skill, convert_to_tensor=False)
-        text_vec   = embedder.encode(text,  convert_to_tensor=False)
 
-        similarity = np.dot(skill_vec, text_vec) / (
-            np.linalg.norm(skill_vec) * np.linalg.norm(text_vec)
+    try:
+        embeddings = embedder.encode(
+            [skill, text],
+            convert_to_tensor=False,
+            normalize_embeddings=True,
+            show_progress_bar=False,
         )
 
-        return float(max(0.0, min(1.0, similarity)))
+        similarity = float(
+            np.dot(
+                embeddings[0],
+                embeddings[1],
+            )
+        )
+
+        return float(
+            max(
+                0.0,
+                min(1.0, similarity),
+            )
+        )
+
     except Exception as e:
-        log_warning(f"Similarity error for '{skill}': {e}", context='ats_scorer')
+        log_warning(
+            f"Similarity error for '{skill}': {e}",
+            context="ats_scorer",
+        )
         return 0.0
 
-def _skill_matches(skill: str, text: str, embedder: SentenceTransformer, threshold: float) -> Tuple[bool, float]:
+def _skill_matches(
+    skill: str,
+    text: str,
+    embedder: SentenceTransformer,
+    threshold: float,
+) -> Tuple[bool, float]:
 
-    #fast, o(n) directly check if skill is a substring of the text (case-insensitive)
+    # Fast exact/sub-string check.
     if skill.lower() in text.lower():
         return True, 1.0
-    
-    #slow, semantic similarity check using sentence embeddings
-    sim = _calculate_semantic_similarity(skill, text, embedder)
-    return sim >= threshold, sim
+
+    # Semantic fallback.
+    similarity = _calculate_semantic_similarity(
+        skill,
+        text,
+        embedder,
+    )
+
+    return similarity >= threshold, similarity
 
 #Skill validation
 def validate_skills_with_projects(
@@ -107,60 +138,330 @@ def validate_skills_with_projects(
     embedder: SentenceTransformer,
     threshold: float = 0.6,
 ) -> Dict:
-    
+
     if not skills:
         return {
-            'validated_skills':      [],
-            'unvalidated_skills':    [],
-            'validation_percentage': 0.0,
-            'skill_project_mapping': {},
-            'validation_score':      0.0,
+            "validated_skills": [],
+            "unvalidated_skills": [],
+            "validation_percentage": 0.0,
+            "skill_project_mapping": {},
+            "validation_score": 0.0,
         }
 
-    experience_text = ' '.join(
-        f"{e.get('job_title', '')} {e.get('company', '')} {e.get('description', '')}"
-        for e in experience_entries
-        if isinstance(e, dict)
+    # ------------------------------------------------------------
+    # Build project texts once.
+    # ------------------------------------------------------------
+
+    project_items = []
+
+    for project in projects:
+        project_text = (
+            f"{project.get('title', '')} "
+            f"{project.get('description', '')}"
+        ).strip()
+
+        project_items.append(
+            (
+                project.get(
+                    "title",
+                    "Untitled Project",
+                ),
+                project_text,
+            )
+        )
+
+    # ------------------------------------------------------------
+    # Build experience text once.
+    # ------------------------------------------------------------
+
+    experience_text = " ".join(
+        (
+            f"{entry.get('job_title', '')} "
+            f"{entry.get('company', '')} "
+            f"{entry.get('description', '')}"
+        )
+        for entry in experience_entries
+        if isinstance(entry, dict)
     ).strip()
 
-    validated_skills      = []
-    unvalidated_skills    = []
+    # ------------------------------------------------------------
+    # Prepare semantic candidates.
+    #
+    # We only need semantic matching when substring matching
+    # fails. But instead of calling encode() thousands of times,
+    # all unique skills/texts are encoded in batches.
+    # ------------------------------------------------------------
+
+    all_texts = [
+        text
+        for _, text in project_items
+        if text
+    ]
+
+    if experience_text:
+        all_texts.append(experience_text)
+
+    # Deduplicate while preserving order.
+    unique_texts = list(
+        dict.fromkeys(all_texts)
+    )
+
+    unique_skills = [
+        str(skill).strip()
+        for skill in skills
+        if str(skill).strip()
+    ]
+
+    unique_skills = list(
+        dict.fromkeys(unique_skills)
+    )
+
+    # ------------------------------------------------------------
+    # Batch encode skills + project/experience texts.
+    # ------------------------------------------------------------
+
+    skill_embeddings = None
+    text_embeddings = None
+
+    if unique_skills and unique_texts:
+
+        try:
+            skill_embeddings = embedder.encode(
+                unique_skills,
+                convert_to_tensor=False,
+                normalize_embeddings=True,
+                batch_size=SENTENCE_TRANSFORMER_BATCH_SIZE,
+                show_progress_bar=False,
+            )
+
+            text_embeddings = embedder.encode(
+                unique_texts,
+                convert_to_tensor=False,
+                normalize_embeddings=True,
+                batch_size=SENTENCE_TRANSFORMER_BATCH_SIZE,
+                show_progress_bar=False,
+            )
+
+        except Exception as e:
+            log_warning(
+                f"Batch skill embedding failed: {e}",
+                context="ats_scorer",
+            )
+
+            skill_embeddings = None
+            text_embeddings = None
+
+    # ------------------------------------------------------------
+    # Create lookup maps.
+    # ------------------------------------------------------------
+
+    skill_index = {
+        skill: index
+        for index, skill in enumerate(unique_skills)
+    }
+
+    text_index = {
+        text: index
+        for index, text in enumerate(unique_texts)
+    }
+
+    similarity_matrix = None
+
+    if (
+        skill_embeddings is not None
+        and text_embeddings is not None
+    ):
+        try:
+            similarity_matrix = np.matmul(
+                np.asarray(skill_embeddings),
+                np.asarray(text_embeddings).T,
+            )
+
+            similarity_matrix = np.clip(
+                similarity_matrix,
+                0.0,
+                1.0,
+            )
+
+        except Exception as e:
+            log_warning(
+                f"Similarity matrix calculation failed: {e}",
+                context="ats_scorer",
+            )
+
+            similarity_matrix = None
+
+    # ------------------------------------------------------------
+    # Validate each skill.
+    # ------------------------------------------------------------
+
+    validated_skills = []
+    unvalidated_skills = []
     skill_project_mapping = {}
 
     for skill in skills:
-        matching_projects = []
-        max_similarity    = 0.0
 
-        for project in projects:
-            project_text = f"{project.get('title', '')} {project.get('description', '')}"
-            matched, sim = _skill_matches(skill, project_text, embedder, threshold)
-            max_similarity = max(max_similarity, sim)
+        skill = str(skill).strip()
+
+        if not skill:
+            continue
+
+        matching_projects = []
+        max_similarity = 0.0
+
+        skill_idx = skill_index.get(skill)
+
+        # --------------------------------------------------------
+        # Projects
+        # --------------------------------------------------------
+
+        for project_title, project_text in project_items:
+
+            if not project_text:
+                continue
+
+            # Preserve existing fast substring behavior.
+            if skill.lower() in project_text.lower():
+
+                matched = True
+                similarity = 1.0
+
+            elif (
+                similarity_matrix is not None
+                and skill_idx is not None
+                and project_text in text_index
+            ):
+
+                text_idx = text_index[project_text]
+
+                similarity = float(
+                    similarity_matrix[
+                        skill_idx,
+                        text_idx,
+                    ]
+                )
+
+                matched = similarity >= threshold
+
+            else:
+
+                matched, similarity = _skill_matches(
+                    skill,
+                    project_text,
+                    embedder,
+                    threshold,
+                )
+
+            max_similarity = max(
+                max_similarity,
+                similarity,
+            )
 
             if matched:
-                matching_projects.append(project.get('title', 'Untitled Project'))
+                matching_projects.append(
+                    project_title
+                )
+
+        # --------------------------------------------------------
+        # Experience
+        # --------------------------------------------------------
 
         if experience_text:
-            matched, sim = _skill_matches(skill, experience_text, embedder, threshold)
-            max_similarity = max(max_similarity, sim)
-            if matched and 'Experience Section' not in matching_projects:
-                matching_projects.append('Experience Section')
+
+            if skill.lower() in experience_text.lower():
+
+                matched = True
+                similarity = 1.0
+
+            elif (
+                similarity_matrix is not None
+                and skill_idx is not None
+                and experience_text in text_index
+            ):
+
+                text_idx = text_index[
+                    experience_text
+                ]
+
+                similarity = float(
+                    similarity_matrix[
+                        skill_idx,
+                        text_idx,
+                    ]
+                )
+
+                matched = similarity >= threshold
+
+            else:
+
+                matched, similarity = _skill_matches(
+                    skill,
+                    experience_text,
+                    embedder,
+                    threshold,
+                )
+
+            max_similarity = max(
+                max_similarity,
+                similarity,
+            )
+
+            if (
+                matched
+                and "Experience Section"
+                not in matching_projects
+            ):
+                matching_projects.append(
+                    "Experience Section"
+                )
+
+        # --------------------------------------------------------
+        # Final classification.
+        # --------------------------------------------------------
 
         if matching_projects:
-            validated_skills.append({'skill': skill, 'projects': matching_projects, 'similarity': max_similarity})
-            skill_project_mapping[skill] = matching_projects
-        else:
-            unvalidated_skills.append(skill)
-            skill_project_mapping[skill] = []
 
-    validation_percentage = len(validated_skills) / len(skills)
-    validation_score      = validation_percentage * 15.0
+            validated_skills.append(
+                {
+                    "skill": skill,
+                    "projects": matching_projects,
+                    "similarity": max_similarity,
+                }
+            )
+
+            skill_project_mapping[
+                skill
+            ] = matching_projects
+
+        else:
+
+            unvalidated_skills.append(
+                skill
+            )
+
+            skill_project_mapping[
+                skill
+            ] = []
+
+    # ------------------------------------------------------------
+    # Preserve existing scoring behavior.
+    # ------------------------------------------------------------
+
+    validation_percentage = (
+        len(validated_skills)
+        / len(skills)
+    )
+
+    validation_score = (
+        validation_percentage * 15.0
+    )
 
     return {
-        'validated_skills':      validated_skills,
-        'unvalidated_skills':    unvalidated_skills,
-        'validation_percentage': validation_percentage,
-        'skill_project_mapping': skill_project_mapping,
-        'validation_score':      validation_score,
+        "validated_skills": validated_skills,
+        "unvalidated_skills": unvalidated_skills,
+        "validation_percentage": validation_percentage,
+        "skill_project_mapping": skill_project_mapping,
+        "validation_score": validation_score,
     }
 
 #01: formatting score
@@ -225,7 +526,6 @@ def _calc_keywords_score(
 def _calc_content_score(
     text: str,
     action_verbs: List[str],
-    grammar_results: Dict,
 ) -> float:
     
     score = 0.0
@@ -241,9 +541,6 @@ def _calc_content_score(
     ]
     achievement_count = sum(len(re.findall(p, text, re.IGNORECASE)) for p in number_patterns)
     score += _tier_score(achievement_count, [(10,5.0),(7,4.0),(5,3.0),(3,2.0),(1,1.0)])
-
-    grammar_penalty = grammar_results.get('penalty_applied', 0.0)
-    score += max(0.0, 10.0 - grammar_penalty / 2.0)
 
     return min(25.0, max(0.0, score))
 
@@ -297,7 +594,6 @@ def calculate_overall_score(
     keywords: List[str],
     action_verbs: List[str],
     skill_validation_results: Dict,
-    grammar_results: Dict,
     location_results: Dict,
     jd_keywords: Optional[List[str]] = None,
     experience_months: int = 0,
@@ -305,7 +601,7 @@ def calculate_overall_score(
 
     formatting_score        = _calc_formatting_score(parsed_resume, text)
     keywords_score          = _calc_keywords_score(keywords, skills, jd_keywords)
-    content_score           = _calc_content_score(text, action_verbs, grammar_results)
+    content_score           = _calc_content_score(text, action_verbs)
     skill_validation_score  = _calc_skill_validation_score(skill_validation_results)
     ats_compatibility_score = _calc_ats_compatibility_score(text, location_results, parsed_resume)
 
@@ -333,9 +629,6 @@ def calculate_overall_score(
     bonuses   = {}
     score     = base_score
 
-    if grammar_results.get('penalty_applied', 0.0) > 0:
-        penalties['grammar'] = grammar_results['penalty_applied']
-
     if location_results.get('penalty_applied', 0.0) > 0:
         penalties['location_privacy'] = location_results['penalty_applied']
 
@@ -347,12 +640,6 @@ def calculate_overall_score(
         bonuses['good_skill_validation'] = 1.0
         score += 1.0
 
-    if (
-    grammar_results.get('_component_status') == 'available'
-    and grammar_results.get('total_errors', 0) == 0
-):
-        bonuses['perfect_grammar'] = 1.0
-        score += 1.0
 
     if jd_keywords and len(jd_keywords) > 0:
         all_resume_terms = list(set((keywords or []) + (skills or [])))
@@ -387,49 +674,78 @@ def calculate_overall_score(
 def generate_strengths(
     score_results: Dict,
     skill_validation_results: Dict,
-    grammar_results: Dict,
 ) -> List[str]:
 
     strengths = []
 
-    if score_results['formatting_score']       >= 16:
-        strengths.append(' Well-structured with clear sections and bullet points')
-    if score_results['keywords_score']          >= 20:
-        strengths.append(' Strong keyword optimization and skills presence')
-    if score_results['content_score']           >= 20:
-        strengths.append(' Excellent use of action verbs and quantifiable achievements')
-    if score_results['skill_validation_score']  >= 12:
-        pct = skill_validation_results.get('validation_percentage', 0) * 100
-        strengths.append(f' {pct:.0f}% of skills are validated by projects')
+    if score_results['formatting_score'] >= 16:
+        strengths.append(
+            ' Well-structured with clear sections and bullet points'
+        )
+
+    if score_results['keywords_score'] >= 20:
+        strengths.append(
+            ' Strong keyword optimization and skills presence'
+        )
+
+    if score_results['content_score'] >= 20:
+        strengths.append(
+            ' Excellent use of action verbs and quantifiable achievements'
+        )
+
+    if score_results['skill_validation_score'] >= 12:
+        pct = (
+            skill_validation_results.get(
+                'validation_percentage',
+                0,
+            )
+            * 100
+        )
+
+        strengths.append(
+            f' {pct:.0f}% of skills are validated by projects'
+        )
+
     if score_results['ats_compatibility_score'] >= 13:
-        strengths.append(' Excellent ATS compatibility with clean formatting')
-    if grammar_results.get('total_errors', 0)   == 0:
-        strengths.append(' Error-free grammar and spelling')
+        strengths.append(
+            ' Excellent ATS compatibility with clean formatting'
+        )
 
     if not strengths:
-        strengths.append('Your resume has potential - focus on the recommendations below')
+        strengths.append(
+            'Your resume has potential - focus on the recommendations below'
+        )
+
     return strengths
 
 
 #Critical issues that could cause ATS rejection
 def generate_critical_issues(
     score_results: Dict,
-    grammar_results: Dict,
     location_results: Dict,
 ) -> List[str]:
+
     issues = []
 
-    critical_errors = len(grammar_results.get('critical_errors', []))
-    if critical_errors > 0:
-        issues.append(f' {critical_errors} critical grammar/spelling error(s) detected')
     if location_results.get('privacy_risk') == 'high':
-        issues.append('High privacy risk: Remove detailed location information')
-    if score_results['formatting_score']       < 10:
-        issues.append(' Poor formatting: Add clear sections and bullet points')
-    if score_results['keywords_score']         < 12:
-        issues.append(' Insufficient keywords and skills')
+        issues.append(
+            'High privacy risk: Remove detailed location information'
+        )
+
+    if score_results['formatting_score'] < 10:
+        issues.append(
+            ' Poor formatting: Add clear sections and bullet points'
+        )
+
+    if score_results['keywords_score'] < 12:
+        issues.append(
+            ' Insufficient keywords and skills'
+        )
+
     if score_results['skill_validation_score'] < 7:
-        issues.append(' Most skills lack supporting evidence in projects')
+        issues.append(
+            ' Most skills lack supporting evidence in projects'
+        )
 
     return issues
 

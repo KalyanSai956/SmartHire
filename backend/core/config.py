@@ -8,7 +8,6 @@ from pathlib import Path
 # ENVIRONMENT
 # ============================================================
 
-
 try:
     from dotenv import load_dotenv
 
@@ -45,7 +44,6 @@ def _env_bool(
 # APPLICATION
 # ============================================================
 
-
 APP_ENV = os.getenv(
     "APP_ENV",
     "development",
@@ -65,7 +63,6 @@ APP_DESCRIPTION = (
 # ============================================================
 # CORS
 # ============================================================
-
 
 _default_origins = [
     "http://localhost:5173",
@@ -87,7 +84,6 @@ ALLOWED_ORIGINS = [
 # ============================================================
 # FILE UPLOADS
 # ============================================================
-
 
 MAX_FILE_SIZE_MB = 5
 
@@ -114,15 +110,8 @@ SUPPORTED_EXTENSIONS = {
 # NLP / EMBEDDINGS
 # ============================================================
 
-
 SPACY_MODEL_PRIMARY = os.getenv(
     "SPACY_MODEL_PRIMARY",
-    "en_core_web_md",
-)
-
-
-SPACY_MODEL_SECONDARY = os.getenv(
-    "SPACY_MODEL_SECONDARY",
     "en_core_web_sm",
 )
 
@@ -134,9 +123,91 @@ SENTENCE_TRANSFORMER_MODEL = os.getenv(
 
 
 # ============================================================
-# ATS SCORING
+# PYTORCH / SENTENCE TRANSFORMER OPTIMIZATION
 # ============================================================
 
+# SmartHire currently uses Sentence Transformers for
+# semantic ATS matching.
+#
+# CPU is intentional here:
+# - avoids CUDA memory usage
+# - avoids GPU dependency
+# - keeps Docker deployment portable
+# - works well with all-MiniLM-L6-v2
+
+PYTORCH_DEVICE = os.getenv(
+    "PYTORCH_DEVICE",
+    "cpu",
+).strip().lower()
+
+
+# Number of CPU threads used by PyTorch intra-op operations.
+#
+# Default: 4
+#
+# This prevents PyTorch from aggressively consuming every
+# available CPU core during embedding inference.
+
+PYTORCH_NUM_THREADS = int(
+    os.getenv(
+        "PYTORCH_NUM_THREADS",
+        "4",
+    )
+)
+
+
+# Number of threads used for PyTorch inter-op operations.
+#
+# Keep this low for a FastAPI server so embedding inference
+# does not create excessive CPU contention.
+
+PYTORCH_NUM_INTEROP_THREADS = int(
+    os.getenv(
+        "PYTORCH_NUM_INTEROP_THREADS",
+        "1",
+    )
+)
+
+
+# Batch size used when generating Sentence Transformer
+# embeddings.
+
+SENTENCE_TRANSFORMER_BATCH_SIZE = int(
+    os.getenv(
+        "SENTENCE_TRANSFORMER_BATCH_SIZE",
+        "16",
+    )
+)
+
+
+# SentenceTransformer will normalize embeddings during
+# inference.
+#
+# Normalized vectors allow cosine similarity to be calculated
+# efficiently using a dot product.
+
+SENTENCE_TRANSFORMER_NORMALIZE = _env_bool(
+    "SENTENCE_TRANSFORMER_NORMALIZE",
+    True,
+)
+
+
+# Maximum characters passed to semantic matching functions.
+#
+# This keeps embedding workloads bounded while preserving
+# the existing ATS matching behavior.
+
+SENTENCE_TRANSFORMER_MAX_TEXT_LENGTH = int(
+    os.getenv(
+        "SENTENCE_TRANSFORMER_MAX_TEXT_LENGTH",
+        "5000",
+    )
+)
+
+
+# ============================================================
+# ATS SCORING
+# ============================================================
 
 SCORE_WEIGHTS = {
     "formatting": 20,
@@ -155,7 +226,6 @@ JD_SEMANTIC_WEIGHT = 0.4
 # ============================================================
 # SUPABASE
 # ============================================================
-
 
 SUPABASE_URL = os.getenv(
     "SUPABASE_URL",
@@ -185,7 +255,6 @@ SUPABASE_JWT_SECRET = os.getenv(
 # AI
 # ============================================================
 
-
 GROQ_API_KEY = os.getenv(
     "GROQ_API_KEY",
     "",
@@ -211,7 +280,6 @@ PLATFORM_AI_TOKEN_LIMIT = int(
 # ============================================================
 # REDIS
 # ============================================================
-
 
 REDIS_ENABLED = _env_bool(
     "REDIS_ENABLED",
@@ -243,7 +311,6 @@ REDIS_CONNECT_TIMEOUT = float(
 # CACHE TTL
 # ============================================================
 
-
 JOB_CACHE_TTL_SECONDS = int(
     os.getenv(
         "JOB_CACHE_TTL_SECONDS",
@@ -271,7 +338,6 @@ JOB_RECOMMENDATION_CACHE_TTL_SECONDS = int(
 # ============================================================
 # RATE LIMITING
 # ============================================================
-
 
 RATE_LIMIT_WINDOW_SECONDS = int(
     os.getenv(
