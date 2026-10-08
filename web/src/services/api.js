@@ -3,31 +3,141 @@ const API_BASE_URL =
   "http://127.0.0.1:8000";
 
 import { retryRequest } from "./apiRetry";
+import { supabase } from "../context/AuthContext";
+
+/* =====================================================
+   AUTHENTICATION
+   ===================================================== */
+
+/*
+ * Get the latest access token directly from Supabase.
+ *
+ * React's AuthContext can temporarily contain an older
+ * token while Supabase is refreshing the session.
+ */
+async function getCurrentAccessToken(fallbackToken) {
+  if (!supabase) {
+    return fallbackToken || null;
+  }
+
+  try {
+    const { data, error } =
+      await supabase.auth.getSession();
+
+    if (
+      !error &&
+      data?.session?.access_token
+    ) {
+      return data.session.access_token;
+    }
+  } catch (error) {
+    console.warn(
+      "Unable to get current Supabase session:",
+      error
+    );
+  }
+
+  return fallbackToken || null;
+}
+
+
+/*
+ * Make an authenticated request.
+ *
+ * If the backend returns 401:
+ *
+ *   old token
+ *       ↓
+ *      401
+ *       ↓
+ *   get latest Supabase session
+ *       ↓
+ *   retry once with fresh token
+ *
+ * No infinite retry loop.
+ */
+async function fetchWithAuthRetry(
+  url,
+  { token, ...options } = {}
+) {
+  const makeRequest = async (
+    accessToken
+  ) => {
+    const headers = new Headers(
+      options.headers || {}
+    );
+
+    if (accessToken) {
+      headers.set(
+        "Authorization",
+        `Bearer ${accessToken}`
+      );
+    }
+
+    return fetch(url, {
+      ...options,
+      headers,
+    });
+  };
+
+  let response =
+    await makeRequest(token);
+
+  /*
+   * Only retry when we actually had a token.
+   *
+   * This prevents public requests from causing
+   * unnecessary Supabase session lookups.
+   */
+  if (
+    response.status === 401 &&
+    token
+  ) {
+    const freshToken =
+      await getCurrentAccessToken(
+        token
+      );
+
+    /*
+     * Only retry if Supabase returned a
+     * different/current token.
+     */
+    if (
+      freshToken &&
+      freshToken !== token
+    ) {
+      response =
+        await makeRequest(
+          freshToken
+        );
+    }
+  }
+
+  return response;
+}
+
+
+/* =====================================================
+   GENERIC API REQUEST
+   ===================================================== */
+
 async function request(
   path,
   { token, ...options } = {}
 ) {
-  const headers = new Headers(
-    options.headers || {}
-  );
-
-  if (token) {
-    headers.set(
-      "Authorization",
-      `Bearer ${token}`
+  const response =
+    await fetchWithAuthRetry(
+      `${API_BASE_URL}${path}`,
+      {
+        token,
+        ...options,
+      }
     );
-  }
-
-  const response = await fetch(
-    `${API_BASE_URL}${path}`,
-    {
-      ...options,
-      headers,
-    }
-  );
 
   const contentType =
-    response.headers.get("content-type") || "";
+    response.headers.get(
+      "content-type"
+    ) || "";
 
 
   if (!response.ok) {
@@ -44,19 +154,36 @@ async function request(
           .json()
           .catch(() => null);
 
-      if (typeof data?.detail === "string") {
+      if (
+        typeof data?.detail ===
+        "string"
+      ) {
         message = data.detail;
-      } else if (data?.detail && typeof data.detail === "object") {
+
+      } else if (
+        data?.detail &&
+        typeof data.detail ===
+          "object"
+      ) {
         message =
           data.detail.message ||
           data.detail.code ||
           message;
-      } else if (data?.error && typeof data.error === "object") {
+
+      } else if (
+        data?.error &&
+        typeof data.error ===
+          "object"
+      ) {
         message =
           data.error.message ||
           data.error.code ||
           message;
-      } else if (typeof data?.message === "string") {
+
+      } else if (
+        typeof data?.message ===
+        "string"
+      ) {
         message = data.message;
       }
 
@@ -87,6 +214,11 @@ async function request(
   return response.text();
 }
 
+
+/* =====================================================
+   INTERVIEW RETRY
+   ===================================================== */
+
 export async function retryInterviewRequest(
   operation,
   options = {},
@@ -97,6 +229,8 @@ export async function retryInterviewRequest(
     ...options,
   });
 }
+
+
 /* =====================================================
    HEALTH
    ===================================================== */
@@ -141,7 +275,7 @@ export function deleteHistoryEntry(
 
 
 /*
- * Keep this alias because your History.jsx
+ * Keep this alias because History.jsx
  * currently imports deleteHistory.
  */
 export function deleteHistory(
@@ -165,7 +299,8 @@ export function analyzeResume({
   provider,
   token,
 }) {
-  const formData = new FormData();
+  const formData =
+    new FormData();
 
   formData.append(
     "resume",
@@ -193,6 +328,8 @@ export function analyzeResume({
     }
   );
 }
+
+
 /* =====================================================
    HISTORY PDF
    ===================================================== */
@@ -202,18 +339,12 @@ export async function getHistoryPdf(
   token
 ) {
   const response =
-    await fetch(
+    await fetchWithAuthRetry(
       `${API_BASE_URL}/api/v1/history/${id}/pdf`,
       {
-        headers: token
-          ? {
-              Authorization:
-                `Bearer ${token}`,
-            }
-          : {},
+        token,
       }
     );
-
 
   if (!response.ok) {
     const data =
@@ -226,7 +357,6 @@ export async function getHistoryPdf(
         `PDF request failed (${response.status})`
     );
   }
-
 
   return response.blob();
 }
@@ -241,27 +371,19 @@ export async function generatePdfBlob(
   token
 ) {
   const response =
-    await fetch(
+    await fetchWithAuthRetry(
       `${API_BASE_URL}/api/v1/generate-pdf`,
       {
         method: "POST",
-
+        token,
         headers: {
           "Content-Type":
             "application/json",
-
-          ...(token
-            ? {
-                Authorization:
-                  `Bearer ${token}`,
-              }
-            : {}),
         },
-
-        body: JSON.stringify(data),
+        body:
+          JSON.stringify(data),
       }
     );
-
 
   if (!response.ok) {
     const result =
@@ -275,19 +397,24 @@ export async function generatePdfBlob(
     );
   }
 
-
   return response.blob();
 }
+
 
 /* =====================================================
    CAREER PROFILE
    ===================================================== */
 
 export function getProfile(token) {
-  return request("/api/v1/profile", {
-    token,
-  });
+  return request(
+    "/api/v1/profile",
+    {
+      token,
+    }
+  );
 }
+
+
 export function saveOnboardingProgress({
   step,
   username,
@@ -299,27 +426,37 @@ export function saveOnboardingProgress({
   graduationYear,
   token,
 }) {
-  return request("/api/v1/profile/onboarding-progress", {
-    method: "PATCH",
-    token,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      step,
-      username,
-      career_interests: careerInterests,
-      specializations,
-      skills,
-      target_roles: targetRoles,
-      experience,
-      graduation_year:
-        graduationYear === "" || graduationYear == null
-          ? null
-          : Number(graduationYear),
-    }),
-  });
+  return request(
+    "/api/v1/profile/onboarding-progress",
+    {
+      method: "PATCH",
+      token,
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        step,
+        username,
+        career_interests:
+          careerInterests,
+        specializations,
+        skills,
+        target_roles:
+          targetRoles,
+        experience,
+        graduation_year:
+          graduationYear === "" ||
+          graduationYear == null
+            ? null
+            : Number(
+                graduationYear
+              ),
+      }),
+    }
+  );
 }
+
 
 export function updateProfile({
   username,
@@ -331,65 +468,93 @@ export function updateProfile({
   graduationYear,
   token,
 }) {
-  return request("/api/v1/profile", {
-    method: "PUT",
-    token,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      username,
-      career_interests: careerInterests,
-      specializations,
-      skills,
-      target_roles: targetRoles,
-      experience,
-      graduation_year: graduationYear,
-    }),
-  });
+  return request(
+    "/api/v1/profile",
+    {
+      method: "PUT",
+      token,
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        username,
+        career_interests:
+          careerInterests,
+        specializations,
+        skills,
+        target_roles:
+          targetRoles,
+        experience,
+        graduation_year:
+          graduationYear,
+      }),
+    }
+  );
 }
+
 
 export function uploadProfileResume({
   file,
   token,
 }) {
-  const formData = new FormData();
+  const formData =
+    new FormData();
 
-  formData.append("resume", file);
-
-  return request("/api/v1/profile/resume", {
-    method: "POST",
-    body: formData,
-    token,
-  });
-}
-
-
-export function completeOnboarding(token) {
-  return request("/api/v1/profile/complete", {
-    method: "POST",
-    token,
-  });
-}
-
-
-
-export async function getLLMSettings(accessToken) {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/llm-settings`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
+  formData.append(
+    "resume",
+    file
   );
 
+  return request(
+    "/api/v1/profile/resume",
+    {
+      method: "POST",
+      body: formData,
+      token,
+    }
+  );
+}
+
+
+export function completeOnboarding(
+  token
+) {
+  return request(
+    "/api/v1/profile/complete",
+    {
+      method: "POST",
+      token,
+    }
+  );
+}
+
+
+/* =====================================================
+   LLM SETTINGS
+   ===================================================== */
+
+export async function getLLMSettings(
+  accessToken
+) {
+  const response =
+    await fetchWithAuthRetry(
+      `${API_BASE_URL}/api/v1/llm-settings`,
+      {
+        method: "GET",
+        token: accessToken,
+      }
+    );
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
+    const error =
+      await response
+        .json()
+        .catch(() => ({}));
 
     throw new Error(
-      error.detail || "Failed to load AI settings."
+      error.detail ||
+        "Failed to load AI settings."
     );
   }
 
@@ -403,27 +568,34 @@ export async function connectLLMProvider(
   apiKey,
   model
 ) {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/llm-settings/connect`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        provider,
-        api_key: apiKey,
-        model: model || null,
-      }),
-    }
-  );
+  const response =
+    await fetchWithAuthRetry(
+      `${API_BASE_URL}/api/v1/llm-settings/connect`,
+      {
+        method: "POST",
+        token: accessToken,
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          provider,
+          api_key: apiKey,
+          model:
+            model || null,
+        }),
+      }
+    );
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
+    const error =
+      await response
+        .json()
+        .catch(() => ({}));
 
     throw new Error(
-      error.detail || "Failed to connect AI provider."
+      error.detail ||
+        "Failed to connect AI provider."
     );
   }
 
@@ -435,21 +607,24 @@ export async function disconnectLLMProvider(
   accessToken,
   provider
 ) {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/llm-settings/${provider}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
+  const response =
+    await fetchWithAuthRetry(
+      `${API_BASE_URL}/api/v1/llm-settings/${provider}`,
+      {
+        method: "DELETE",
+        token: accessToken,
+      }
+    );
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
+    const error =
+      await response
+        .json()
+        .catch(() => ({}));
 
     throw new Error(
-      error.detail || "Failed to disconnect AI provider."
+      error.detail ||
+        "Failed to disconnect AI provider."
     );
   }
 
@@ -457,30 +632,38 @@ export async function disconnectLLMProvider(
 }
 
 
-export async function getUsageQuota(accessToken) {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/usage/quota`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
+export async function getUsageQuota(
+  accessToken
+) {
+  const response =
+    await fetchWithAuthRetry(
+      `${API_BASE_URL}/api/v1/usage/quota`,
+      {
+        method: "GET",
+        token: accessToken,
+      }
+    );
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
+    const error =
+      await response
+        .json()
+        .catch(() => ({}));
 
     throw new Error(
-      error.detail || "Failed to load usage information."
+      error.detail ||
+        "Failed to load usage information."
     );
   }
 
   return response.json();
 }
+
+
 /* =====================================================
    JOB RECOMMENDATIONS
    ===================================================== */
+
 export function getJobRecommendations({
   token,
   matchThreshold = 0.25,
@@ -489,18 +672,36 @@ export function getJobRecommendations({
   remoteType,
   employmentType,
 }) {
-  const params = new URLSearchParams();
+  const params =
+    new URLSearchParams();
 
-  params.set("match_threshold", String(matchThreshold));
-  params.set("candidate_count", String(candidateCount));
-  params.set("result_count", String(resultCount));
+  params.set(
+    "match_threshold",
+    String(matchThreshold)
+  );
+
+  params.set(
+    "candidate_count",
+    String(candidateCount)
+  );
+
+  params.set(
+    "result_count",
+    String(resultCount)
+  );
 
   if (remoteType) {
-    params.set("remote_type", remoteType);
+    params.set(
+      "remote_type",
+      remoteType
+    );
   }
 
   if (employmentType) {
-    params.set("employment_type", employmentType);
+    params.set(
+      "employment_type",
+      employmentType
+    );
   }
 
   return request(
@@ -511,6 +712,7 @@ export function getJobRecommendations({
     }
   );
 }
+
 
 /* =====================================================
    JOBS
@@ -528,41 +730,60 @@ export async function getJobs({
   company = "",
   sort = "newest",
 } = {}) {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-    sort,
-  });
+  const params =
+    new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      sort,
+    });
 
   if (search) {
-    params.set("search", search);
+    params.set(
+      "search",
+      search
+    );
   }
 
   if (location) {
-    params.set("location", location);
+    params.set(
+      "location",
+      location
+    );
   }
 
   if (remoteType) {
-    params.set("remote_type", remoteType);
+    params.set(
+      "remote_type",
+      remoteType
+    );
   }
 
   if (employmentType) {
-    params.set("employment_type", employmentType);
+    params.set(
+      "employment_type",
+      employmentType
+    );
   }
 
   if (experience) {
-    params.set("experience", experience);
+    params.set(
+      "experience",
+      experience
+    );
   }
 
   if (company) {
-    params.set("company", company);
+    params.set(
+      "company",
+      company
+    );
   }
 
   return request(
     `/api/v1/jobs?${params.toString()}`,
     {
       token,
-    },
+    }
   );
 }
 
@@ -571,12 +792,14 @@ export async function getJobs({
    SAVED JOBS
    ===================================================== */
 
-export async function getSavedJobs(token) {
+export async function getSavedJobs(
+  token
+) {
   return request(
     "/api/v1/jobs/saved",
     {
       token,
-    },
+    }
   );
 }
 
@@ -587,14 +810,14 @@ export async function getSavedJobs(token) {
 
 export async function saveJob(
   jobId,
-  token,
+  token
 ) {
   return request(
     `/api/v1/jobs/${jobId}/save`,
     {
       method: "POST",
       token,
-    },
+    }
   );
 }
 
@@ -605,54 +828,93 @@ export async function saveJob(
 
 export async function removeSavedJob(
   jobId,
-  token,
+  token
 ) {
   return request(
     `/api/v1/jobs/${jobId}/save`,
     {
       method: "DELETE",
       token,
-    },
+    }
   );
 }
-export async function getAdminOverview(token) {
-  return request("/api/v1/admin/overview", {
-    method: "GET",
-    token,
-  });
+
+
+/* =====================================================
+   ADMIN
+   ===================================================== */
+
+export async function getAdminOverview(
+  token
+) {
+  return request(
+    "/api/v1/admin/overview",
+    {
+      method: "GET",
+      token,
+    }
+  );
 }
 
-export async function getAdminUsers(token) {
-  return request("/api/v1/admin/users", {
-    method: "GET",
-    token,
-  });
+
+export async function getAdminUsers(
+  token
+) {
+  return request(
+    "/api/v1/admin/users",
+    {
+      method: "GET",
+      token,
+    }
+  );
 }
 
-export async function getAdminJobs(token) {
-  return request("/api/v1/admin/jobs", {
-    method: "GET",
-    token,
-  });
+
+export async function getAdminJobs(
+  token
+) {
+  return request(
+    "/api/v1/admin/jobs",
+    {
+      method: "GET",
+      token,
+    }
+  );
 }
 
-export async function getAdminSources(token) {
-  return request("/api/v1/admin/sources", {
-    method: "GET",
-    token,
-  });
+
+export async function getAdminSources(
+  token
+) {
+  return request(
+    "/api/v1/admin/sources",
+    {
+      method: "GET",
+      token,
+    }
+  );
 }
 
-export async function getAdminEmbeddings(token) {
-  return request("/api/v1/admin/embeddings", {
-    method: "GET",
-    token,
-  });
-}
 
-export async function getAdminLLMUsage(token) {
-  return request("/api/v1/admin/llm-usage", {
-    method: "GET",
-    token,
-  });
+export async function getAdminEmbeddings(
+  token
+) {
+  return request(
+    "/api/v1/admin/embeddings",
+    {
+      method: "GET",
+      token,
+    }
+  );
+}
+export async function getAdminLLMUsage(
+  token
+) {
+  return request(
+    "/api/v1/admin/llm-usage",
+    {
+      method: "GET",
+      token,
+    }
+  );
 }

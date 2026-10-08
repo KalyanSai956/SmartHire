@@ -5,7 +5,7 @@
 **An AI-powered Applicant Tracking System that analyzes resumes against job descriptions, evaluates resume quality, validates skills, and generates actionable ATS scores.**
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://your-vercel-domain.vercel.app/)
-[![GitHub](https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/KalyanSai956/SmartHire_ATS)
+[![GitHub](https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/KalyanSai956/SmartHire)
 
 ![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
@@ -45,10 +45,10 @@ Instead of relying on simple keyword matching, SmartHire combines **NLP, semanti
 
 ## Live Demo
 
-| Resource          | Link                                                                        |
-| ----------------- | --------------------------------------------------------------------------- |
-| Web Application   | [your-vercel-domain.vercel.app](https://your-vercel-domain.vercel.app/)     |
-| GitHub Repository | [KalyanSai956/SmartHire_ATS](https://github.com/KalyanSai956/SmartHire_ATS) |
+| Resource          | Link                                                                    |
+| ----------------- | ----------------------------------------------------------------------- |
+| Web Application   | [your-vercel-domain.vercel.app](https://your-vercel-domain.vercel.app/) |
+| GitHub Repository | [KalyanSai956/SmartHire_ATS](https://github.com/KalyanSai956/SmartHire) |
 
 ---
 
@@ -171,8 +171,7 @@ FastAPI Backend
      ▼               ▼               ▼
  NLP Engine       Supabase         Redis
  spaCy            PostgreSQL       Cache
- Sentence         Database         Rate Limits
- Transformers
+FastEmbed / ONNX
      │
      ▼
 LLM Gateway
@@ -186,13 +185,13 @@ LLM Gateway
 
 ## Tech Stack
 
-| Layer                   | Technologies                                                          |
-| ----------------------- | --------------------------------------------------------------------- |
-| **Frontend**            | React, Vite, JavaScript, CSS                                          |
-| **Backend**             | Python, FastAPI, REST APIs                                            |
-| **AI / NLP**            | spaCy, Sentence Transformers, LLM-based analysis, Semantic embeddings |
-| **Database & Services** | Supabase, PostgreSQL, Redis                                           |
-| **Infrastructure**      | Docker, Docker Compose                                                |
+| Layer                   | Technologies                                                   |
+| ----------------------- | -------------------------------------------------------------- |
+| **Frontend**            | React, Vite, JavaScript, CSS                                   |
+| **Backend**             | Python, FastAPI, REST APIs                                     |
+| **AI / NLP**            | spaCy, FastEmbed/ONNX, LLM-based analysis, Semantic embeddings |
+| **Database & Services** | Supabase, PostgreSQL, Redis                                    |
+| **Infrastructure**      | Docker, Docker Compose                                         |
 
 ---
 
@@ -201,15 +200,15 @@ LLM Gateway
 ### Prerequisites
 
 - Node.js 18+
-- Python 3.10+
+- Python 3.11+
 - Docker and Docker Compose (optional)
 - A Supabase project and a Redis instance
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/KalyanSai956/SmartHire_ATS.git
-cd SmartHire_ATS
+git clone https://github.com/KalyanSai956/SmartHire.git
+cd SmartHire
 ```
 
 ### 2. Run the backend
@@ -231,8 +230,6 @@ cd web
 npm install
 npm run dev
 ```
-
-> Adjust folder names and commands above to match your repository layout, and add a `.env.example` documenting the required environment variables (Supabase URL/keys, Redis URL, LLM provider keys).
 
 ---
 
