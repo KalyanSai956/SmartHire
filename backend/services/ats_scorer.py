@@ -1,7 +1,7 @@
 import re
 import spacy
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from backend.services.embedder import FastEmbedder as SentenceTransformer  # ONNX replacement, same .encode() API
 from typing import Dict, List, Optional, Tuple
 
 from backend.utils.file_utils import log_warning

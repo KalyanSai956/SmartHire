@@ -2,7 +2,7 @@ from typing import Dict, List
 
 import numpy as np
 import spacy
-from sentence_transformers import SentenceTransformer
+from backend.services.embedder import FastEmbedder as SentenceTransformer  # ONNX replacement, same .encode() API
 from rapidfuzz import fuzz
 
 from backend.utils.matching import (

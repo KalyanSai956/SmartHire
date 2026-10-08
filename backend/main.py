@@ -5,11 +5,10 @@ import uuid
 from contextlib import asynccontextmanager
 
 import spacy
-import torch
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sentence_transformers import SentenceTransformer
+from backend.services.embedder import FastEmbedder
 
 from backend.api.admin import router as admin_router
 from backend.api.job_rag import router as job_rag_router
@@ -42,50 +41,6 @@ from backend.services.cache.redis_client import (
 
 
 logger = logging.getLogger("smarthire")
-
-
-# ================================================================
-# PYTORCH CPU CONFIGURATION
-# ================================================================
-#
-# Configure PyTorch before loading the Sentence Transformer.
-#
-# This prevents PyTorch from trying to use excessive CPU
-# parallelism during embedding inference.
-#
-# SmartHire currently uses all-MiniLM-L6-v2, which is lightweight
-# enough for CPU inference.
-# ================================================================
-
-try:
-
-    torch.set_num_threads(
-        PYTORCH_NUM_THREADS
-    )
-
-    torch.set_num_interop_threads(
-        PYTORCH_NUM_INTEROP_THREADS
-    )
-
-    logger.info(
-        "PyTorch CPU configuration: "
-        "threads=%s interop_threads=%s",
-        PYTORCH_NUM_THREADS,
-        PYTORCH_NUM_INTEROP_THREADS,
-    )
-
-except RuntimeError as exc:
-
-    # PyTorch may reject changing inter-op threads if another
-    # parallel operation has already started.
-    #
-    # This should not normally happen during normal startup,
-    # but the application should remain robust if it does.
-
-    logger.warning(
-        "Could not fully configure PyTorch thread settings: %s",
-        exc,
-    )
 
 
 # ================================================================
@@ -176,9 +131,9 @@ async def lifespan(
         PYTORCH_DEVICE,
     )
 
-    app.state.embedder = SentenceTransformer(
+    app.state.embedder = FastEmbedder(
         SENTENCE_TRANSFORMER_MODEL,
-        device=PYTORCH_DEVICE,
+        threads=PYTORCH_NUM_THREADS,
     )
 
     # ------------------------------------------------------------
@@ -202,11 +157,6 @@ async def lifespan(
     logger.info(
         "Embedding device: %s",
         PYTORCH_DEVICE,
-    )
-
-    logger.info(
-        "PyTorch threads: %s",
-        torch.get_num_threads(),
     )
 
     logger.info(

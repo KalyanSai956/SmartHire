@@ -16,7 +16,7 @@ from backend.models.schemas import (
 
 import pdfplumber
 from docx import Document
-import PyPDF2
+import pypdf
 from backend.utils.file_utils import (
     FileParsingError,
     TextExtractionError,
@@ -66,7 +66,7 @@ def validate_file(file_data: bytes, filename: str) -> Tuple[bool, str, Optional[
 def _extract_pdf_hyperlinks(file_data: bytes) -> str:
     urls = []
     try:
-        reader = PyPDF2.PdfReader(io.BytesIO(file_data))
+        reader = pypdf.PdfReader(io.BytesIO(file_data))
         for page in reader.pages:
             if '/Annots' not in page:
                 continue
@@ -114,7 +114,7 @@ def _extract_pdf_with_pdfplumber(file_data: bytes) -> str:
 
 def _extract_pdf_with_pypdf2(file_data: bytes) -> str:
     text = ''
-    pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_data))
+    pdf_reader = pypdf.PdfReader(io.BytesIO(file_data))
     for page in pdf_reader.pages:
         page_text = page.extract_text()
         if page_text:

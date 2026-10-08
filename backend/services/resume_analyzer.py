@@ -1,7 +1,7 @@
 import logging
 import spacy
 
-from sentence_transformers import SentenceTransformer
+from backend.services.embedder import FastEmbedder as SentenceTransformer  # ONNX replacement, same .encode() API
 from typing import Dict, List, Optional
 
 from backend.services.groq_parser import (

@@ -2,7 +2,7 @@ import re
 from typing import Dict, List, Any
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from backend.services.embedder import FastEmbedder as SentenceTransformer  # ONNX replacement, same .encode() API
 
 from backend.models.schemas import (
     AdvancedATSResult,

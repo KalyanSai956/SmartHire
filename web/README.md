@@ -72,7 +72,7 @@ npm run dev
 
 ## Important
 
-The PDF frontend code correctly treats PDF responses as binary blobs. If the backend PDF endpoint itself fails, the UI will display the backend error. The existing Playwright/WeasyPrint PDF backend issue is separate from this frontend.
+The PDF frontend code correctly treats PDF responses as binary blobs. If the backend PDF endpoint itself fails, the UI will display the backend error.
 
 ## Current integration behavior
 

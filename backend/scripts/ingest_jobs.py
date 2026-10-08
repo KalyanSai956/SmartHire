@@ -1,6 +1,6 @@
 import asyncio
 
-from sentence_transformers import SentenceTransformer
+from backend.services.embedder import FastEmbedder as SentenceTransformer  # ONNX replacement, same .encode() API
 
 from backend.core.config import SENTENCE_TRANSFORMER_MODEL
 from backend.services.jobs.ingestion import sync_enabled_sources

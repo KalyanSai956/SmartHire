@@ -1,19 +1,19 @@
 fastapi
-uvicorn[standard]
+uvicorn
 python-dotenv
 pydantic
 PyJWT
 httpx
 numpy
 spacy
-sentence-transformers
+fastembed          # ONNX embeddings: replaces torch + sentence-transformers
 rapidfuzz
 redis
 cryptography
 groq
 jinja2
-pdfplumber
-PyPDF2
+pdfplumber         # primary PDF text extraction
+pypdf              # fallback extraction (replaces deprecated PyPDF2)
 python-docx
-pypdf
 python-multipart
+weasyprint>=62     # HTML -> PDF reports: replaces playwright + Chromium
