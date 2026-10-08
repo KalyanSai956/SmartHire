@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
-
+import BackendWakeup from "./components/BackendWakeup";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProfileRequired from "./components/ProfileRequired";
 import WorkspaceLayout from "./components/WorkspaceLayout";
@@ -45,49 +45,51 @@ function NotFound() {
 
 export default function App() {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route path="/" element={<Landing />} />
+    <BackendWakeup>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Landing />} />
 
-        <Route
-          path="/onboarding"
-          element={
-            <Protected>
-              <Onboarding />
-            </Protected>
-          }
-        />
+          <Route
+            path="/onboarding"
+            element={
+              <Protected>
+                <Onboarding />
+              </Protected>
+            }
+          />
 
-        <Route
-          path="/admin"
-          element={
-            <Protected>
-              <Admin />
-            </Protected>
-          }
-        />
+          <Route
+            path="/admin"
+            element={
+              <Protected>
+                <Admin />
+              </Protected>
+            }
+          />
 
-        <Route
-          element={
-            <Protected>
-              <ProfileRequired>
-                <WorkspaceLayout />
-              </ProfileRequired>
-            </Protected>
-          }
-        >
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/analyze" element={<Analyze />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/analysis/:id" element={<Analysis />} />
-          <Route path="/settings" element={<AISettings />} />
-          <Route path="/jobs" element={<Job />} />
-          <Route path="/interview-prep" element={<InterviewPrep />} />
-          <Route path="/resources" element={<Resources />} />
-        </Route>
+          <Route
+            element={
+              <Protected>
+                <ProfileRequired>
+                  <WorkspaceLayout />
+                </ProfileRequired>
+              </Protected>
+            }
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/analyze" element={<Analyze />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/analysis/:id" element={<Analysis />} />
+            <Route path="/settings" element={<AISettings />} />
+            <Route path="/jobs" element={<Job />} />
+            <Route path="/interview-prep" element={<InterviewPrep />} />
+            <Route path="/resources" element={<Resources />} />
+          </Route>
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Suspense>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    </BackendWakeup>
   );
 }
