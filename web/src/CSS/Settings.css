@@ -584,43 +584,48 @@
   color: #64748b;
   font-size: 13px;
 }
-
 /* =========================================================
-   RESPONSIVE
+   MOBILE FIXES
    ========================================================= */
-
-@media (max-width: 1000px) {
-  .provider-selection-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
 @media (max-width: 800px) {
-  .provider-list {
-    grid-template-columns: 1fr;
-  }
+  .settings-container { width: 100%; }
+  .provider-form input,
+  .api-key-wrapper input { font-size: 16px; min-height: 44px; } /* stops iOS zoom */
 }
 
 @media (max-width: 640px) {
-  .settings-page {
-    padding: 95px 16px 40px;
-  }
+  .settings-page { padding: 16px 14px 40px; } /* was 95px: navbar is sticky now */
+  .settings-header { margin-bottom: 20px; }
+  .settings-header h1 { font-size: 22px; }
+  .settings-header p { font-size: 13.5px; }
 
-  .settings-section {
-    padding: 18px;
-  }
+  .settings-section { padding: 16px; margin-top: 14px; }
+  .settings-section-heading { flex-direction: column; gap: 4px; }
+  .settings-section-heading p { font-size: 12.5px; }
 
-  .provider-selection-grid,
-  .usage-grid,
-  .token-breakdown {
-    grid-template-columns: 1fr;
-  }
+  .provider-selection-grid { grid-template-columns: 1fr; }
+  .provider-select-card { min-height: 0; padding: 14px 16px; }
+  .provider-select-card > span { font-size: 12px; }
+  .provider-select-card small { font-size: 11px; }
+  .provider-status { font-size: 10px; }
 
-  .provider-card-header {
-    flex-direction: column;
-  }
+  .provider-card { padding: 16px; }
+  .provider-card-header { flex-direction: column; gap: 8px; }
+  .provider-card-header p { font-size: 12px; }
+  .provider-form label { font-size: 12px; }
+  .key-visibility-button { padding: 10px; right: 2px; }
 
-  .provider-actions {
-    flex-direction: column;
-  }
+  .provider-actions { flex-direction: column; }
+  .settings-primary-button,
+  .settings-danger-button { width: 100%; min-height: 44px; font-size: 13px; }
+
+  .usage-card strong { font-size: 22px; }
+  .usage-card p,
+  .token-breakdown span,
+  .byok-usage-info span,
+  .byok-info { font-size: 12px; }
+  .byok-info { align-items: flex-start; }
+
+  .settings-popup { padding: 24px 18px 18px; }
+  .settings-popup-button { width: 100%; min-height: 44px; }
 }

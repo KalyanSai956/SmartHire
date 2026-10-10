@@ -313,7 +313,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="page-shell">
+      <div className="page-shell dashboard-page">
         <div className="dashboard-loading">
           <span className="loading-spinner" />
           <span>Preparing your career workspace...</span>
@@ -322,7 +322,7 @@ export default function Dashboard() {
     );
   }
   return (
-    <div className="page-shell">
+    <div className="page-shell dashboard-page">
       <section className="career-profile-banner">
         <div className="career-profile-main">
           <div className="career-avatar">

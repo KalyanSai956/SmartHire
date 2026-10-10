@@ -7,6 +7,7 @@ import { getHistory, deleteHistory } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { normalizeHistory } from "../utils/analysis";
 import AnalysisTable from "../components/AnalysisTable";
+import "../CSS/History.css";
 
 export default function History() {
   const { accessToken } = useAuth();
@@ -120,7 +121,7 @@ export default function History() {
      ===================================================== */
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-5 page-shell">
+    <div className="page-shell history-page">
       {/* =================================================
           HEADER
       ================================================= */}
@@ -151,17 +152,9 @@ export default function History() {
         </div>
       </div>
 
-      {/* =================================================
-          ERROR
-      ================================================= */}
-
       {error && <div className="inline-error history-error">{error}</div>}
 
-      {/* =================================================
-          TABLE
-      ================================================= */}
-
-      <div className="mx-auto max-w-4xl px-6 py-5 panel table-panel history-panel">
+      <div className="panel table-panel history-panel">
         {loading ? (
           <div className="loading-state">
             <span className="loading-spinner" />

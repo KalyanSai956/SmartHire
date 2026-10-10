@@ -493,37 +493,36 @@
 }
 
 /* =========================================================
-   RESPONSIVE
+   MOBILE FIXES
    ========================================================= */
-
 @media (max-width: 720px) {
-  .daily-generator-form {
-    grid-template-columns: 1fr;
-  }
-
-  .daily-nudge-banner {
-    flex-wrap: wrap;
-  }
-
-  .daily-streak-pill {
-    margin-left: 54px;
-  }
+  .daily-field input,
+  .daily-field select { font-size: 16px; min-height: 44px; } /* stops iOS zoom */
+  .daily-field label { font-size: 12px; }
+  .daily-generate-button { width: 100%; min-height: 46px; font-size: 13px; }
 }
 
 @media (max-width: 560px) {
-  .daily-page {
-    padding: 95px 16px 40px;
-  }
+  .daily-page { padding: 16px 14px 40px; } /* was 95px */
+  .daily-header h1 { font-size: 22px; }
+  .daily-header p { font-size: 13.5px; }
 
-  .daily-section {
-    padding: 18px;
-  }
+  .daily-section { padding: 16px; margin-top: 14px; }
+  .daily-section-heading p { font-size: 12.5px; }
 
-  .daily-nudge-banner {
-    align-items: flex-start;
-  }
+  .daily-nudge-banner { padding: 14px; gap: 12px; }
+  .daily-nudge-content strong { font-size: 13.5px; }
+  .daily-nudge-content span { font-size: 12.5px; }
+  .daily-streak-pill { font-size: 12px; }
 
-  .daily-streak-pill {
-    margin-left: 0;
-  }
+  .daily-question-card { padding: 14px; gap: 10px; }
+  .daily-question-body p { font-size: 14px; line-height: 1.6; }
+  .daily-question-meta { flex-wrap: wrap; gap: 8px 12px; }
+  .daily-difficulty-pill { font-size: 11px; }
+  .daily-answer-toggle { padding: 8px 0; font-size: 12.5px; } /* bigger tap area */
+  .daily-answer p { font-size: 13px; }
+
+  .daily-empty-state p,
+  .daily-coming-soon p { font-size: 13px; }
+  .daily-coming-soon { padding: 24px 16px; }
 }

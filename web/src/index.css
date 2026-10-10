@@ -1,0 +1,161 @@
+/* =========================================================
+   FONTS
+   ========================================================= */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
+
+/* =========================================================
+   VARIABLES
+   ========================================================= */
+:root {
+  font-family: "DM Sans", Inter, ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  color: #172033;
+  background: #f6f8fc;
+  font-size: 16px;
+
+  /* Layout */
+  --container-xl: 1440px;
+  --container-lg: 1180px;
+  --container-md: 960px;
+
+  /* Backgrounds */
+  --bg: #f6f8fc;
+  --bg-soft: #eef3f9;
+  --bg-muted: #e8eef6;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --surface-hover: #f1f5f9;
+
+  /* Borders */
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --line-focus: #93c5fd;
+
+  /* Text */
+  --ink: #172033;
+  --ink-strong: #0f172a;
+  --ink-soft: #334155;
+  --muted: #64748b;
+  --muted-dim: #94a3b8;
+
+  /* Brand */
+  --primary: #002a9d;
+  --primary-dark: #011c72;
+  --primary-light: #dbeafe;
+  --primary-soft: #eff6ff;
+  --primary-line: #bfdbfe;
+
+  /* Accent */
+  --accent: #0f766e;
+  --accent-dark: #115e59;
+  --accent-soft: #ccfbf1;
+  --accent-line: #99f6e4;
+
+  /* Status */
+  --green: #15803d;
+  --green-soft: #dcfce7;
+  --green-line: #bbf7d0;
+  --blue: #012e91;
+  --blue-soft: #dbeafe;
+  --purple: #2104c7;
+  --purple-soft: #ede9fe;
+  --gold: #b45309;
+  --gold-soft: #fef3c7;
+  --red: #b91c1c;
+  --red-soft: #fee2e2;
+  --red-line: #fecaca;
+
+  /* Fonts */
+  --font-sans: "DM Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 5px 15px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 14px 35px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 24px 60px rgba(15, 23, 42, 0.12);
+
+  /* Analysis page */
+  --analysis-bg: #f7f9fc;
+  --analysis-surface: #ffffff;
+  --analysis-surface-soft: #f8fafc;
+  --analysis-border: #e4e8ef;
+  --analysis-border-soft: #eef1f5;
+  --analysis-text: #111827;
+  --analysis-text-secondary: #4b5563;
+  --analysis-text-muted: #6b7280;
+  --analysis-green: #16a34a;
+  --analysis-green-soft: #ecfdf3;
+  --analysis-green-border: #bbf7d0;
+  --analysis-orange: #f59e0b;
+  --analysis-orange-soft: #fff7ed;
+  --analysis-orange-border: #fed7aa;
+  --analysis-red: #ef4444;
+  --analysis-red-soft: #fef2f2;
+  --analysis-red-border: #fecaca;
+  --analysis-blue: #2563eb;
+  --analysis-blue-soft: #eff6ff;
+  --analysis-blue-border: #bfdbfe;
+  --analysis-shadow-sm: 0 2px 10px rgba(15, 23, 42, 0.045);
+  --analysis-shadow-md: 0 10px 30px rgba(15, 23, 42, 0.07);
+  --analysis-radius: 16px;
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(191, 219, 254, 0.62), transparent 28rem),
+    radial-gradient(circle at 8% 20%, rgba(207, 250, 254, 0.3), transparent 24rem),
+    radial-gradient(circle at 75% 70%, rgba(237, 233, 254, 0.24), transparent 30rem),
+    var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-sans);
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+code,
+kbd,
+pre {
+  font-family: var(--font-mono);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.2);
+  outline-offset: 2px;
+}
