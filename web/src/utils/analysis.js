@@ -56,12 +56,12 @@ export function normalizeHistory(data) {
 
 export function getAtsScore(result) {
   const candidates = [
-    result?.ats_score,
-    result?.ATS_score,
     result?.advanced_ats?.ats_score,
     result?.advanced_ats?.atsScore,
     result?.advancedATS?.ats_score,
     result?.advancedATS?.atsScore,
+    result?.ats_score,
+    result?.ATS_score,
   ];
 
   for (const value of candidates) {
