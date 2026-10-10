@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-
+import "../CSS/ProfileRequired.css";
 import { useAuth } from "../context/AuthContext";
 import { getProfile } from "../services/api";
 
@@ -69,9 +69,16 @@ export default function ProfileRequired({ children }) {
    */
   if (authLoading || loading) {
     return (
-      <div className="route-loader">
-        <span className="loading-spinner" />
-        <span>Loading your career profile...</span>
+      <div className="profile-required-state" role="status" aria-live="polite">
+        <div className="profile-required-card">
+          <span className="profile-required-spinner" aria-hidden="true" />
+          <h2 className="profile-required-title">
+            Loading your career profile
+          </h2>
+          <p className="profile-required-description">
+            Please wait while we verify your profile and prepare your workspace.
+          </p>
+        </div>
       </div>
     );
   }
@@ -96,8 +103,19 @@ export default function ProfileRequired({ children }) {
    */
   if (error) {
     return (
-      <div className="route-loader">
-        <span>{error}</span>
+      <div
+        className="profile-required-state profile-required-error"
+        role="alert"
+      >
+        <div className="profile-required-card">
+          <span className="profile-required-error-icon" aria-hidden="true">
+            !
+          </span>
+          <h2 className="profile-required-title">
+            Unable to load your profile
+          </h2>
+          <p className="profile-required-description">{error}</p>
+        </div>
       </div>
     );
   }

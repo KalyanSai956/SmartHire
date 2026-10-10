@@ -1,0 +1,133 @@
+/* =========================
+   PROFILE REQUIRED STATES
+   ========================= */
+
+.profile-required-state {
+  --profile-primary: #002a9d;
+  --profile-text: #0b1220;
+  --profile-muted: #64748b;
+  --profile-border: #e6e8ec;
+  --profile-surface: #ffffff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 260px;
+  padding: 24px;
+  color: var(--profile-text);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.profile-required-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 420px;
+  padding: 32px 24px;
+  text-align: center;
+  background: var(--profile-surface);
+  border: 1px solid var(--profile-border);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.profile-required-spinner {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border: 3px solid #e0e7ff;
+  border-top-color: var(--profile-primary);
+  border-radius: 50%;
+  animation: profile-required-spin 0.8s linear infinite;
+}
+
+.profile-required-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+}
+
+.profile-required-description {
+  max-width: 320px;
+  margin: 0;
+  color: var(--profile-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* Error state */
+
+.profile-required-error-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: #b42318;
+  background: #fef3f2;
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.profile-required-error .profile-required-card {
+  border-color: #fecdca;
+}
+
+.profile-required-error .profile-required-title {
+  color: #b42318;
+}
+
+/* Animation */
+
+@keyframes profile-required-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tablet and mobile */
+
+@media (max-width: 768px) {
+  .profile-required-state {
+    min-height: 220px;
+    padding: 20px 14px;
+  }
+
+  .profile-required-card {
+    max-width: 100%;
+    padding: 26px 18px;
+    border-radius: 12px;
+  }
+
+  .profile-required-title {
+    font-size: 17px;
+  }
+
+  .profile-required-description {
+    font-size: 13.5px;
+  }
+}
+
+@media (max-width: 380px) {
+  .profile-required-state {
+    padding: 16px 10px;
+  }
+
+  .profile-required-card {
+    padding: 22px 14px;
+    gap: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-required-spinner {
+    animation-duration: 2s;
+  }
+}
