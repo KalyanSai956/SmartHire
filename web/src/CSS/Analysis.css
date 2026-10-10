@@ -1156,3 +1156,176 @@
   .grammar-error-section-header { flex-direction: column; gap: 10px; }
   .grammar-error-list { max-height: 320px; }
 }
+/* ---------- Skill Validation ---------- */
+
+.skill-validation {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.skill-validation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.skill-validation-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.skill-validation-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.skill-validation-stat {
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.skill-validation-stat span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.skill-validation-stat strong {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.skill-validation-progress {
+  height: 8px;
+  overflow: hidden;
+  background: var(--line);
+  border-radius: 999px;
+}
+
+.skill-validation-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+
+.skill-validation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skill-validation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 15px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.skill-validation-item:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow);
+}
+
+.skill-validation-item.validated {
+  border-left: 3px solid var(--green);
+}
+
+.skill-validation-item.unvalidated {
+  border-left: 3px solid var(--amber);
+}
+
+.skill-validation-item > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.skill-validation-item.validated > svg {
+  color: var(--green);
+}
+
+.skill-validation-item.unvalidated > svg {
+  color: var(--amber);
+}
+
+.skill-validation-item strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.skill-validation-item p {
+  margin: 4px 0 0;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.skill-validation-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.skill-validation-badge.validated {
+  color: #067647;
+  background: var(--green-soft);
+  border-color: #abefc6;
+}
+
+.skill-validation-badge.unvalidated {
+  color: #b54708;
+  background: var(--amber-soft);
+  border-color: #fedf89;
+}
+
+.skill-validation-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--ink-3);
+  background: var(--surface-2);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .skill-validation-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .skill-validation-stat {
+    padding: 12px 14px;
+  }
+
+  .skill-validation-stat strong {
+    font-size: 21px;
+  }
+
+  .skill-validation-item {
+    padding: 11px 12px;
+  }
+}
