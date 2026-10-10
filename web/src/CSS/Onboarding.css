@@ -369,16 +369,294 @@
 
 @keyframes onb-spin { to { transform: rotate(360deg); } }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 560px) {
-  .onboarding-page { align-items: flex-start; padding: 16px 12px; }
-  .onboarding-card { padding: 20px 18px; }
-  .onboarding-section h2 { font-size: 20px; }
-  .experience-options { grid-template-columns: 1fr; }
-  .tag-input { flex-direction: column; }
-  .tag-input .button { width: 100%; }
+/* =========================
+   MOBILE-FRIENDLY ONBOARDING
+   ========================= */
+
+.onboarding-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--bg);
+  box-sizing: border-box;
 }
 
+.onboarding-content {
+  width: 100%;
+  max-width: 620px;
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.onboarding-card {
+  width: 100%;
+  min-width: 0;
+  padding: 28px 32px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+
+.onboarding-section,
+.onboarding-header,
+.onboarding-actions {
+  min-width: 0;
+}
+
+.onboarding-page input,
+.onboarding-page button {
+  max-width: 100%;
+}
+
+.onboarding-page input,
+.onboarding-page textarea,
+.onboarding-page select {
+  scroll-margin-block: 12px;
+}
+
+/* =========================
+   TABLETS
+   ========================= */
+
+@media (max-width: 768px) {
+  .onboarding-page {
+    padding: 20px 14px;
+  }
+
+  .onboarding-card {
+    padding: 24px;
+  }
+
+  .onboarding-section h2 {
+    font-size: 21px;
+  }
+}
+
+/* =========================
+   MOBILE PHONES
+   ========================= */
+
+@media (max-width: 560px) {
+  .onboarding-page {
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .onboarding-content {
+    width: 100%;
+    max-width: 460px;
+  }
+
+  .onboarding-card {
+    padding: 18px 16px;
+    border-radius: 12px;
+  }
+
+  .onboarding-card-head {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .brand-logo {
+    height: 24px;
+    max-width: 120px;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  .onboarding-progress {
+    margin-bottom: 18px;
+  }
+
+  .onboarding-header {
+    margin-bottom: 16px;
+  }
+
+  .onboarding-section {
+    gap: 12px;
+  }
+
+  .onboarding-section h2 {
+    font-size: 19px;
+    line-height: 1.35;
+  }
+
+  .onboarding-section > p {
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  .auth-field {
+    gap: 5px;
+  }
+
+  .auth-field input,
+  .tag-input input {
+    width: 100%;
+    height: 44px;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .tag-input {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .tag-input input {
+    flex: 1;
+  }
+
+  .onboarding-page .button {
+    min-height: 44px;
+    height: auto;
+    padding: 10px 14px;
+    white-space: normal;
+    font-size: 14px;
+  }
+
+  .suggestion-grid {
+    gap: 7px;
+  }
+
+  .suggestion-chip {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 12.5px;
+  }
+
+  .experience-options {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .experience-option {
+    min-height: 44px;
+    padding: 11px 12px;
+  }
+
+  .resume-upload-box {
+    min-height: 150px;
+    padding: 18px 12px;
+  }
+
+  .onboarding-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 18px -16px -18px;
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 12px 12px;
+  }
+
+  .onboarding-actions > * {
+    min-width: 0;
+  }
+
+  .onboarding-actions .button {
+    flex: 1;
+  }
+
+  .onboarding-error {
+    overflow-wrap: anywhere;
+    font-size: 13px;
+  }
+}
+
+/* =========================
+   SMALL PHONES
+   ========================= */
+
+@media (max-width: 380px) {
+  .onboarding-page {
+    padding-inline: 8px;
+  }
+
+  .onboarding-card {
+    padding: 16px 12px;
+  }
+
+  .onboarding-section h2 {
+    font-size: 18px;
+  }
+
+  .onboarding-card-head {
+    align-items: center;
+  }
+
+  .onboarding-step {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .onboarding-actions {
+    margin-inline: -12px;
+    margin-bottom: -16px;
+    padding-inline: 12px;
+  }
+
+  .onboarding-actions .button {
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+}
+
+/* =========================
+   SHORT SCREENS / KEYBOARD
+   ========================= */
+
+@media (max-height: 600px) {
+  .onboarding-page {
+    align-items: flex-start;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .onboarding-card {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .onboarding-card-head {
+    margin-bottom: 8px;
+  }
+
+  .onboarding-progress {
+    margin-bottom: 12px;
+  }
+
+  .onboarding-header {
+    margin-bottom: 12px;
+  }
+
+  .onboarding-section {
+    gap: 10px;
+  }
+}
+
+/* =========================
+   ACCESSIBILITY
+   ========================= */
+
 @media (prefers-reduced-motion: reduce) {
-  .onboarding-page *, .route-loader * { animation: none !important; transition: none !important; }
+  .onboarding-page *,
+  .route-loader * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
