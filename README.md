@@ -44,7 +44,7 @@ Instead of relying on simple keyword matching, SmartHire combines **NLP, semanti
 
 | Resource          | Link                                                                    |
 | ----------------- | ----------------------------------------------------------------------- |
-| Web Application   | [your-vercel-domain.vercel.app](https://smarthirework.vercel.app/) |
+| Web Application   | [smarthirework.vercel.app](https://smarthirework.vercel.app/) |
 | GitHub Repository | [KalyanSai956/SmartHire](https://github.com/KalyanSai956/SmartHire) |
 
 ---
