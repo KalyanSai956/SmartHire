@@ -53,18 +53,56 @@ export function normalizeHistory(data) {
   return [];
 }
 
+
 export function getAtsScore(result) {
-  return Number(result?.ats_score ?? result?.ATS_score ?? 0);
+  const candidates = [
+    result?.ats_score,
+    result?.ATS_score,
+    result?.advanced_ats?.ats_score,
+    result?.advanced_ats?.atsScore,
+    result?.advancedATS?.ats_score,
+    result?.advancedATS?.atsScore,
+  ];
+
+  for (const value of candidates) {
+    if (
+      value !== null &&
+      value !== undefined &&
+      value !== "" &&
+      Number.isFinite(Number(value))
+    ) {
+      return Number(value);
+    }
+  }
+
+  return 0;
 }
 
 export function getJdMatch(result) {
-  return Number(
-    result?.jd_comparison?.match_percentage ??
-    result?.jd_match_analysis?.match_percentage ??
-    result?.keyword_match ??
-    0
-  );
+  const candidates = [
+    result?.jd_comparison?.match_percentage,
+    result?.jd_match_analysis?.match_percentage,
+    result?.advanced_ats?.jd_match,
+    result?.advanced_ats?.jdMatch,
+    result?.advancedATS?.jd_match,
+    result?.advancedATS?.jdMatch,
+    result?.keyword_match,
+  ];
+
+  for (const value of candidates) {
+    if (
+      value !== null &&
+      value !== undefined &&
+      value !== "" &&
+      Number.isFinite(Number(value))
+    ) {
+      return Number(value);
+    }
+  }
+
+  return 0;
 }
+
 
 export function getSkills(result) {
   return Array.isArray(result?.skills) ? result.skills : [];
