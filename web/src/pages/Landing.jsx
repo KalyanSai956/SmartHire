@@ -253,10 +253,14 @@ function Landing() {
                   Analyze My Resume
                   <ArrowRight size={17} />
                 </button>
-
-                <a href="#jobs" className="lh-outline-btn lh-large-btn">
-                  Explore Jobs
-                </a>
+                <button
+                  type="button"
+                  className="lh-secondary-btn lh-large-btn"
+                  onClick={openLogin}
+                >
+                  Login
+                  <ArrowRight size={17} />
+                </button>
               </div>
 
               <div className="lh-hero-note">
