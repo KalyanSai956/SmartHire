@@ -12,12 +12,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* Full-screen layout */
   width: 100%;
   min-width: 0;
-  min-height: 260px;
+  min-height: 100vh;
+  min-height: 100dvh;
   padding: 24px;
+  box-sizing: border-box;
+
   color: var(--profile-text);
   font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f5f7fc;
 }
 
 .profile-required-card {
@@ -25,9 +31,12 @@
   flex-direction: column;
   align-items: center;
   gap: 14px;
+
   width: 100%;
   max-width: 420px;
   padding: 32px 24px;
+  box-sizing: border-box;
+
   text-align: center;
   background: var(--profile-surface);
   border: 1px solid var(--profile-border);
@@ -96,7 +105,6 @@
 
 @media (max-width: 768px) {
   .profile-required-state {
-    min-height: 220px;
     padding: 20px 14px;
   }
 
@@ -125,6 +133,8 @@
     gap: 12px;
   }
 }
+
+/* Reduced motion */
 
 @media (prefers-reduced-motion: reduce) {
   .profile-required-spinner {
