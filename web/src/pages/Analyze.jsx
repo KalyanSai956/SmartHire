@@ -4,6 +4,7 @@ import { CheckCircle2, Upload } from "lucide-react";
 import { analyzeResume } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import "../CSS/Analyze.css";
+import AnalysisLoading from "../components/AnalysisLoading";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -96,7 +97,9 @@ export default function Analyze() {
       setBusy(false);
     }
   }
-
+  if (busy) {
+    return <AnalysisLoading />;
+  }
   return (
     <div className="mx-auto max-w-7xl px-2 py-2 page-shell">
       <section className="center-heading">

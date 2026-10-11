@@ -23,7 +23,7 @@ import {
 } from "../services/api";
 
 import "../CSS/Onboarding.css";
-
+import AnalysisLoading from "../components/AnalysisLoading";
 const EXPERIENCE_OPTIONS = [
   "Student",
   "Fresher",
@@ -519,6 +519,9 @@ export default function Onboarding() {
         <span>Restoring your career profile...</span>
       </div>
     );
+  }
+  if (busy && step === TOTAL_STEPS) {
+    return <AnalysisLoading />;
   }
 
   /*
