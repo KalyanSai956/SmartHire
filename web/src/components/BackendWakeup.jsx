@@ -146,10 +146,7 @@ export default function BackendWakeup({ children }) {
 
   const shell = (content) => (
     <div className="backend-wakeup">
-      <div className="backend-wakeup-card">
-        <div className="backend-wakeup-logo">S</div>
-        {content}
-      </div>
+      <div className="backend-wakeup-card">{content}</div>
     </div>
   );
 
