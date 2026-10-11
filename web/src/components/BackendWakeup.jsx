@@ -3,190 +3,239 @@ import "../CSS/BackendWakeup.css";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
-
 const HEALTH_URL = `${API_BASE_URL}/api/v1/health`;
 
 const MAX_WAIT_TIME = 120000; // 2 minutes
 const INITIAL_RETRY_DELAY = 1500;
 const MAX_RETRY_DELAY = 5000;
+const WARM_WINDOW = 10 * 60 * 1000; // treat backend as awake for 10 min
+const STORAGE_KEY = "backendReadyAt";
+
+// Steps are tied to elapsed seconds so progress looks real.
+const STAGES = [
+  { until: 8, label: "Connecting to SmartHire" },
+  { until: 28, label: "Loading language models" },
+  { until: 48, label: "Warming up resume analysis" },
+  { until: Infinity, label: "Almost there" },
+];
+
+const TIPS = [
+  "Recruiters spend only about 7 seconds on a first look at a resume.",
+  "Quantified achievements get more attention than long task lists.",
+  "SmartHire matches skills by meaning, not just exact keywords.",
+  "Tailoring your resume to each job description improves your match score.",
+  "Keep your resume to one or two pages. Clear beats long.",
+];
+
+const TIP_INTERVAL = 5000;
+
+/**
+ * Call this on your landing/login page (fire-and-forget) so the backend
+ * starts waking up before the user ever reaches the app.
+ *   useEffect(() => { warmBackend(); }, []);
+ */
+export function warmBackend() {
+  fetch(HEALTH_URL, { mode: "no-cors", cache: "no-store" }).catch(() => {});
+}
+
+function wasRecentlyReady() {
+  try {
+    const t = Number(sessionStorage.getItem(STORAGE_KEY) || 0);
+    return Date.now() - t < WARM_WINDOW;
+  } catch {
+    return false;
+  }
+}
+
+function markReady() {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, String(Date.now()));
+  } catch {
+    /* storage unavailable, ignore */
+  }
+}
 
 export default function BackendWakeup({ children }) {
-  const [status, setStatus] = useState("checking");
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [status, setStatus] = useState(() =>
+    wasRecentlyReady() ? "ready" : "checking",
+  );
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [tipIndex, setTipIndex] = useState(0);
 
+  // Health check loop
   useEffect(() => {
+    if (status === "ready") return;
+
     let cancelled = false;
     let retryTimer = null;
-    let elapsedTimer = null;
-    let startTime = Date.now();
+    const startTime = Date.now();
+
+    const tick = setInterval(() => {
+      if (!cancelled) setElapsedMs(Date.now() - startTime);
+    }, 250);
 
     const checkBackend = async () => {
       if (cancelled) return;
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+
       try {
-        const controller = new AbortController();
-
-        const timeout = setTimeout(() => {
-          controller.abort();
-        }, 8000);
-
         const response = await fetch(HEALTH_URL, {
           method: "GET",
           cache: "no-store",
           signal: controller.signal,
         });
-
         clearTimeout(timeout);
 
-        if (!response.ok) {
-          throw new Error(`Health check failed: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Health check: ${response.status}`);
 
         const data = await response.json();
-
         if (
           data?.status === "healthy" &&
           data?.nlp_loaded === true &&
           data?.embedder_loaded === true
         ) {
-          if (!cancelled) {
-            setStatus("ready");
-          }
-
+          if (cancelled) return;
+          markReady();
+          setStatus("finishing"); // let the bar reach 100% briefly
+          retryTimer = setTimeout(() => !cancelled && setStatus("ready"), 450);
           return;
         }
-
         throw new Error("Backend is still initializing.");
-      } catch (error) {
+      } catch {
+        clearTimeout(timeout);
         if (cancelled) return;
 
         const elapsed = Date.now() - startTime;
-
         if (elapsed >= MAX_WAIT_TIME) {
           setStatus("failed");
           return;
         }
 
         setStatus("waking");
-
-        const retryDelay = Math.min(
+        const delay = Math.min(
           INITIAL_RETRY_DELAY + Math.floor(elapsed / 10000) * 500,
           MAX_RETRY_DELAY,
         );
-
-        retryTimer = setTimeout(checkBackend, retryDelay);
+        retryTimer = setTimeout(checkBackend, delay);
       }
     };
-
-    elapsedTimer = setInterval(() => {
-      if (!cancelled) {
-        setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-      }
-    }, 1000);
 
     checkBackend();
 
     return () => {
       cancelled = true;
-
-      if (retryTimer) {
-        clearTimeout(retryTimer);
-      }
-
-      if (elapsedTimer) {
-        clearInterval(elapsedTimer);
-      }
+      clearInterval(tick);
+      if (retryTimer) clearTimeout(retryTimer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (status === "ready") {
-    return children;
-  }
-
-  if (status === "failed") {
-    return (
-      <div className="backend-wakeup">
-        <div className="backend-wakeup-card">
-          <div className="backend-wakeup-logo">S</div>
-
-          <div className="backend-wakeup-icon backend-wakeup-icon-error">!</div>
-
-          <h1>SmartHire is taking longer than expected</h1>
-
-          <p>
-            We're having trouble connecting to the SmartHire backend. Please try
-            again.
-          </p>
-
-          <button
-            className="backend-wakeup-button"
-            onClick={() => window.location.reload()}
-          >
-            Try again
-          </button>
-
-          <span className="backend-wakeup-time">
-            Connection attempt: {elapsedSeconds}s
-          </span>
-        </div>
-      </div>
+  // Rotating tips
+  useEffect(() => {
+    if (status === "ready" || status === "failed") return;
+    const id = setInterval(
+      () => setTipIndex((i) => (i + 1) % TIPS.length),
+      TIP_INTERVAL,
     );
-  }
+    return () => clearInterval(id);
+  }, [status]);
 
-  return (
+  if (status === "ready") return children;
+
+  const shell = (content) => (
     <div className="backend-wakeup">
       <div className="backend-wakeup-card">
         <div className="backend-wakeup-logo">S</div>
-
-        <div className="backend-wakeup-spinner">
-          <span />
-        </div>
-
-        <h1>
-          {status === "checking"
-            ? "Connecting to SmartHire"
-            : "Getting things ready"}
-        </h1>
-
-        <p>
-          {status === "checking"
-            ? "Checking the SmartHire AI workspace..."
-            : "SmartHire's AI backend is waking up. This usually takes a few seconds after a period of inactivity."}
-        </p>
-
-        <div className="backend-wakeup-status">
-          <div className="backend-status-item completed">
-            <span className="backend-status-dot">✓</span>
-            <span>Connecting to SmartHire</span>
-          </div>
-
-          <div
-            className={`backend-status-item ${
-              status === "waking" ? "active" : ""
-            }`}
-          >
-            <span className="backend-status-dot">
-              {status === "waking" ? <span className="mini-spinner" /> : "○"}
-            </span>
-
-            <span>Starting AI services</span>
-          </div>
-
-          <div className="backend-status-item">
-            <span className="backend-status-dot">○</span>
-
-            <span>Preparing your workspace</span>
-          </div>
-        </div>
-
-        <div className="backend-wakeup-progress">
-          <div className="backend-wakeup-progress-bar" />
-        </div>
-
-        <span className="backend-wakeup-time">
-          {elapsedSeconds > 0 ? `${elapsedSeconds}s` : "Connecting..."}
-        </span>
+        {content}
       </div>
     </div>
+  );
+
+  if (status === "failed") {
+    return shell(
+      <>
+        <h1>This is taking longer than usual</h1>
+        <p>
+          We couldn't reach SmartHire just yet. Check your connection and try
+          again.
+        </p>
+        <button
+          className="backend-wakeup-button"
+          onClick={() => window.location.reload()}
+        >
+          Try again
+        </button>
+      </>,
+    );
+  }
+
+  const seconds = elapsedMs / 1000;
+
+  // Eases toward ~90% over ~50s, never stalls visibly, jumps to 100% on ready.
+  const progress =
+    status === "finishing" ? 100 : 92 * (1 - Math.exp(-seconds / 18));
+
+  const activeStage =
+    status === "finishing"
+      ? STAGES.length
+      : STAGES.findIndex((s) => seconds < s.until);
+
+  // Only mention the delay if it's genuinely long.
+  const slow = seconds > 60;
+
+  return shell(
+    <>
+      <h1>Preparing your AI workspace</h1>
+      <p>
+        {slow
+          ? "Still working on it. Thanks for your patience."
+          : "Loading the models that analyze resumes and match candidates. The first load takes a moment."}
+      </p>
+
+      <div className="backend-wakeup-status" aria-live="polite">
+        {STAGES.map((stage, i) => {
+          if (
+            i > Math.min(activeStage, STAGES.length - 1) &&
+            status !== "finishing"
+          ) {
+            return null;
+          }
+          const done = i < activeStage;
+          const active = i === activeStage;
+          return (
+            <div
+              key={stage.label}
+              className={`backend-status-item ${
+                done ? "completed" : active ? "active" : ""
+              }`}
+            >
+              <span className="backend-status-dot">
+                {done ? "✓" : active ? <span className="mini-spinner" /> : "○"}
+              </span>
+              <span>{stage.label}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div
+        className="backend-wakeup-progress"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress)}
+      >
+        <div
+          className="backend-wakeup-progress-bar"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <p key={tipIndex} className="backend-wakeup-tip">
+        {TIPS[tipIndex]}
+      </p>
+    </>,
   );
 }
