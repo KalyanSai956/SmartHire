@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 import BackendWakeup from "./components/BackendWakeup";
+import RouteMeta from "./components/RouteMeta";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProfileRequired from "./components/ProfileRequired";
 import WorkspaceLayout from "./components/WorkspaceLayout";
@@ -45,6 +46,8 @@ function NotFound() {
 
 export default function App() {
   return (
+    <>
+    <RouteMeta />
     <BackendWakeup>
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -91,5 +94,6 @@ export default function App() {
         </Routes>
       </Suspense>
     </BackendWakeup>
+    </>
   );
 }
