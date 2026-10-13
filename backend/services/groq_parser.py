@@ -1,12 +1,19 @@
+import hashlib
 import json
 import logging
-from typing import Dict
+import os
+from typing import Any, Dict, Optional
 
 from backend.services.llm.base import (
     LLMProviderResponseError,
 )
 from backend.services.llm.user_gateway import (
     create_user_llm_gateway,
+)
+from backend.services.cache.cache_service import (
+    build_cache_key,
+    get_json,
+    set_json,
 )
 
 
@@ -115,7 +122,7 @@ Job Description Text:
 # RESUME PARSER
 # ============================================================
 
-async def parse_resume(
+async def _parse_resume_llm(
     raw_text: str,
     *,
     user_id: str,
@@ -216,7 +223,7 @@ async def parse_resume(
 # JOB DESCRIPTION PARSER
 # ============================================================
 
-async def parse_job_description(
+async def _parse_job_description_llm(
     raw_text: str,
     *,
     user_id: str,
@@ -488,5 +495,125 @@ def _validate_resume_result(
             list,
         ):
             proj["technologies"] = []
+
+    return result
+
+# ============================================================
+# CACHED PUBLIC ENTRY POINTS
+#
+# Parsing a resume / JD is a pure function of its text, and it is
+# by far the slowest step (an LLM call). Re-analysing the same
+# resume (e.g. against a different job description) therefore
+# reuses the earlier parse instead of calling the LLM again.
+#
+# Fails open: with Redis disabled/unavailable this behaves exactly
+# like before. Cache hits also skip the credential lookups and
+# record no LLM usage, since no tokens are spent.
+# ============================================================
+
+PARSE_CACHE_TTL_SECONDS = int(
+    os.getenv("PARSE_CACHE_TTL_SECONDS", "86400")
+)
+
+
+def _digest(value: str) -> str:
+    return hashlib.sha256(
+        value.encode("utf-8")
+    ).hexdigest()
+
+
+def _parse_cache_key(
+    namespace: str,
+    *,
+    user_id: str,
+    provider: Optional[str],
+    prompt_template: str,
+    system_prompt: str,
+    raw_text: str,
+) -> str:
+    return build_cache_key(
+        namespace,
+        {
+            "user": user_id,
+            "provider": (provider or "").strip().lower(),
+            # Changing a prompt automatically invalidates old entries.
+            "prompt": _digest(system_prompt + prompt_template),
+            "text": _digest(raw_text),
+        },
+    )
+
+
+async def parse_resume(
+    raw_text: str,
+    *,
+    user_id: str,
+    provider: str | None = None,
+    redis: Any = None,
+) -> Dict:
+    key = _parse_cache_key(
+        "resume_parse",
+        user_id=user_id,
+        provider=provider,
+        prompt_template=RESUME_USER_PROMPT,
+        system_prompt=RESUME_SYSTEM_PROMPT,
+        raw_text=raw_text,
+    )
+
+    cached = await get_json(redis, key)
+
+    if isinstance(cached, dict):
+        logger.info("Resume parse cache HIT")
+        return cached
+
+    result = await _parse_resume_llm(
+        raw_text,
+        user_id=user_id,
+        provider=provider,
+    )
+
+    await set_json(
+        redis,
+        key,
+        result,
+        PARSE_CACHE_TTL_SECONDS,
+    )
+
+    return result
+
+
+async def parse_job_description(
+    raw_text: str,
+    *,
+    user_id: str,
+    provider: str | None = None,
+    redis: Any = None,
+) -> Dict:
+    key = _parse_cache_key(
+        "jd_parse",
+        user_id=user_id,
+        provider=provider,
+        prompt_template=JD_USER_PROMPT,
+        system_prompt=JD_SYSTEM_PROMPT,
+        raw_text=raw_text,
+    )
+
+    cached = await get_json(redis, key)
+
+    if isinstance(cached, dict):
+        logger.info("JD parse cache HIT")
+        return cached
+
+    result = await _parse_job_description_llm(
+        raw_text,
+        user_id=user_id,
+        provider=provider,
+    )
+
+    await set_json(
+        redis,
+        key,
+        result,
+        PARSE_CACHE_TTL_SECONDS,
+    )
 
     return result

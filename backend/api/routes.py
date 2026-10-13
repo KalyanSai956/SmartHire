@@ -5,6 +5,7 @@ from typing import List
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     File,
     Form,
@@ -162,12 +163,74 @@ def _validate_resume_file(
 # ANALYZE RESUME
 # ================================================================
 
+async def _persist_analysis(
+    *,
+    user_id: str,
+    filename: str,
+    history_result: dict,
+    resume_profile_dump: dict,
+    embedder,
+) -> None:
+    """
+    Save history + build the resume RAG index AFTER the response
+    has been sent.
+
+    Neither step affects the analysis response, but together they
+    were adding several seconds of waiting (a Supabase insert plus
+    embedding + several more writes). Failures are logged only,
+    exactly as before ("non-blocking").
+    """
+
+    try:
+        from backend.database.supabase_db import (
+            save_analysis,
+        )
+
+        analysis_id = await save_analysis(
+            user_id,
+            filename,
+            history_result,
+        )
+
+    except Exception as exc:
+        logger.warning(
+            "History save failed (non-blocking): %s",
+            exc,
+        )
+        return
+
+    try:
+        from backend.services.rag.resume_rag import (
+            index_resume,
+        )
+
+        rag_result = await index_resume(
+            user_id=user_id,
+            resume_name=filename,
+            resume_profile=resume_profile_dump,
+            embedder=embedder,
+            source_analysis_id=analysis_id,
+        )
+
+        logger.info(
+            "Phase 2.2 Resume RAG indexing completed: %s",
+            rag_result,
+        )
+
+    except Exception:
+        logger.exception(
+            "Phase 2.2 Resume RAG indexing failed "
+            "(non-blocking)"
+        )
+
+
 @router.post(
     "/analyze-resume",
     response_model=AnalysisResponse,
 )
 async def analyze_resume(
     request: Request,
+    background_tasks: BackgroundTasks,
     resume: UploadFile = File(
         ...,
         description="Resume file — PDF, DOC, or DOCX, max 5 MB",
@@ -303,7 +366,8 @@ async def analyze_resume(
             parse_resume_file,
         )
 
-        resume_text, _metadata = parse_resume_file(
+        resume_text, _metadata = await asyncio.to_thread(
+            parse_resume_file,
             file_bytes,
             filename,
         )
@@ -361,8 +425,9 @@ async def analyze_resume(
             parse_resume_profile,
         )
 
-        resume_profile = parse_resume_profile(
-            resume_text
+        resume_profile = await asyncio.to_thread(
+            parse_resume_profile,
+            resume_text,
         )
 
         logger.info(
@@ -394,8 +459,9 @@ async def analyze_resume(
             analyze_resume_quality,
         )
 
-        resume_quality = analyze_resume_quality(
-            resume_profile
+        resume_quality = await asyncio.to_thread(
+            analyze_resume_quality,
+            resume_profile,
         )
 
         logger.info(
@@ -440,8 +506,9 @@ async def analyze_resume(
     if job_description.strip():
 
         try:
-            jd_intelligence = analyze_job_description(
-                job_description
+            jd_intelligence = await asyncio.to_thread(
+                analyze_job_description,
+                job_description,
             )
 
             logger.info(
@@ -471,7 +538,8 @@ async def analyze_resume(
                 calculate_advanced_ats_score,
             )
 
-            advanced_ats = calculate_advanced_ats_score(
+            advanced_ats = await asyncio.to_thread(
+                calculate_advanced_ats_score,
                 resume_profile=resume_profile,
                 job_description="",
                 embedder=embedder,
@@ -505,6 +573,7 @@ async def analyze_resume(
             job_description=job_description,
             user_id=user_id,
             provider=provider.strip() or None,
+            redis=getattr(request.app.state, "redis", None),
         )
 
     except Exception:
@@ -742,21 +811,15 @@ async def analyze_resume(
     )
 
     # ============================================================
-    # STEP 11 — Save history
+    # STEP 11 — Save history + RAG index (in the background)
     # ============================================================
 
     try:
-        from backend.database.supabase_db import (
-            save_analysis,
-        )
 
         # Start with the existing result so old history
         # continues to work.
 
         history_result = dict(result)
-
-     
-
 
         history_result[
             "resume_profile"
@@ -784,48 +847,19 @@ async def analyze_resume(
                 "jd_intelligence"
             ] = jd_intelligence.model_dump()
 
-        analysis_id = await save_analysis(
-            user_id,
-            filename,
-            history_result,
+        # SPEED: runs after the response is sent.
+        background_tasks.add_task(
+            _persist_analysis,
+            user_id=user_id,
+            filename=filename,
+            history_result=history_result,
+            resume_profile_dump=resume_profile.model_dump(),
+            embedder=embedder,
         )
-
-        # ========================================================
-        # PHASE 2.2 — RESUME RAG INDEXING
-        # ========================================================
-
-        try:
-            from backend.services.rag.resume_rag import (
-                index_resume,
-            )
-
-            rag_result = await index_resume(
-                user_id=user_id,
-                resume_name=filename,
-                resume_profile=resume_profile.model_dump(),
-                embedder=embedder,
-                source_analysis_id=analysis_id,
-            )
-
-            logger.info(
-                "Phase 2.2 Resume RAG indexing completed: %s",
-                rag_result,
-            )
-
-        except Exception:
-            logger.exception(
-                "Phase 2.2 Resume RAG indexing failed "
-                "(non-blocking)"
-            )
-
-            warnings.append(
-                "Resume semantic indexing could not "
-                "be completed."
-            )
 
     except Exception as exc:
         logger.warning(
-            "History save failed (non-blocking): %s",
+            "History save scheduling failed (non-blocking): %s",
             exc,
         )
 

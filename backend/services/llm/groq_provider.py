@@ -19,6 +19,34 @@ logger = logging.getLogger("smarthire.llm.groq")
 
 DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
 
+# ------------------------------------------------------------
+# SPEED SETTINGS
+#
+# gpt-oss models are *reasoning* models. Without an explicit
+# reasoning_effort they "think" before answering, which adds
+# many seconds to what is a plain JSON extraction task.
+# "low" is plenty for resume / JD parsing.
+#
+# Override with GROQ_REASONING_EFFORT=low|medium|high, or set it
+# to "off" to omit the parameter entirely.
+# ------------------------------------------------------------
+GROQ_REASONING_EFFORT = (
+    os.getenv("GROQ_REASONING_EFFORT", "low").strip().lower()
+)
+
+# One AsyncGroq (= one pooled HTTP/2 connection set) per API key.
+# Building a new client for every request means a new TLS
+# handshake every time.
+_CLIENT_CACHE: Dict[str, AsyncGroq] = {}
+
+
+def _get_client(api_key: str) -> AsyncGroq:
+    client = _CLIENT_CACHE.get(api_key)
+    if client is None:
+        client = AsyncGroq(api_key=api_key)
+        _CLIENT_CACHE[api_key] = client
+    return client
+
 
 class GroqProvider(BaseLLMProvider):
 
@@ -42,8 +70,8 @@ class GroqProvider(BaseLLMProvider):
         self.client: Optional[AsyncGroq] = None
 
         if self.api_key:
-            self.client = AsyncGroq(
-                api_key=self.api_key
+            self.client = _get_client(
+                self.api_key
             )
 
     # ========================================================
@@ -148,6 +176,18 @@ class GroqProvider(BaseLLMProvider):
                 kwargs["response_format"] = {
                     "type": "json_object"
                 }
+
+            if (
+                selected_model.startswith("openai/gpt-oss")
+                and GROQ_REASONING_EFFORT in (
+                    "low",
+                    "medium",
+                    "high",
+                )
+            ):
+                kwargs["reasoning_effort"] = (
+                    GROQ_REASONING_EFFORT
+                )
 
             response = await self.client.chat.completions.create(
                 **kwargs

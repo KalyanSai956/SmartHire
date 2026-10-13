@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import threading
 import spacy
 
 from backend.services.embedder import FastEmbedder as SentenceTransformer  # ONNX replacement, same .encode() API
@@ -23,6 +25,17 @@ from backend.services.ats_scorer import (
 
 
 
+# spaCy pipelines are not guaranteed thread-safe, so serialise
+# access to the shared `nlp` object when we run it in a worker
+# thread. (Embedding access is already guarded by its own lock.)
+_NLP_LOCK = threading.Lock()
+
+
+def _compare_with_jd_locked(**kwargs):
+    with _NLP_LOCK:
+        return compare_resume_with_jd(**kwargs)
+
+
 async def analyze_full_resume(
     resume_text: str,
     nlp: spacy.Language,
@@ -31,6 +44,7 @@ async def analyze_full_resume(
     *,
     user_id: str,
     provider: Optional[str] = None,
+    redis=None,
 ) -> Dict:
 
     logger = logging.getLogger("ats_resume_scorer")
@@ -39,11 +53,37 @@ async def analyze_full_resume(
     # 1. Parse resume
     # ------------------------------------------------------------------
 
-    parsed_resume = await parse_resume(
-        resume_text,
-        user_id=user_id,
-        provider=provider,
-    )
+    # SPEED: resume parsing and JD parsing are independent LLM
+    # calls, so run them concurrently instead of back to back.
+    cleaned_jd = (job_description or "").strip()
+
+    if cleaned_jd:
+
+        parsed_resume, parsed_jd = await asyncio.gather(
+            parse_resume(
+                resume_text,
+                user_id=user_id,
+                provider=provider,
+                redis=redis,
+            ),
+            parse_job_description(
+                cleaned_jd,
+                user_id=user_id,
+                provider=provider,
+                redis=redis,
+            ),
+        )
+
+    else:
+
+        parsed_jd = None
+
+        parsed_resume = await parse_resume(
+            resume_text,
+            user_id=user_id,
+            provider=provider,
+            redis=redis,
+        )
 
     logger.info(
         "Groq parsed summary: %s",
@@ -127,7 +167,8 @@ async def analyze_full_resume(
     # 4. Validate skills
     # ------------------------------------------------------------------
 
-    skill_validation = validate_skills_with_projects(
+    skill_validation = await asyncio.to_thread(
+        validate_skills_with_projects,
         skills=skills,
         projects=projects,
         experience_entries=parsed_resume.get(
@@ -144,15 +185,7 @@ async def analyze_full_resume(
     jd_comparison_result = None
     jd_keywords = None
 
-    if job_description and job_description.strip():
-
-        cleaned_jd = job_description.strip()
-
-        parsed_jd = await parse_job_description(
-            cleaned_jd,
-            user_id=user_id,
-            provider=provider,
-        )
+    if parsed_jd is not None:
 
         jd_keywords = list(
             set(
@@ -162,7 +195,8 @@ async def analyze_full_resume(
             )
         )
 
-        jd_comparison_result = compare_resume_with_jd(
+        jd_comparison_result = await asyncio.to_thread(
+            _compare_with_jd_locked,
             resume_text=resume_text,
             resume_keywords=keywords,
             resume_skills=skills,
@@ -188,7 +222,8 @@ async def analyze_full_resume(
     # 8. Calculate ATS score
     # ------------------------------------------------------------------
 
-    scores = calculate_overall_score(
+    scores = await asyncio.to_thread(
+    calculate_overall_score,
     text=resume_text,
     parsed_resume=parsed_resume,
     skills=skills,
@@ -204,7 +239,8 @@ async def analyze_full_resume(
     # 9. Detailed feedback
     # ------------------------------------------------------------------
 
-    detailed_feedback = analyze_issues(
+    detailed_feedback = await asyncio.to_thread(
+        analyze_issues,
         resume_text=resume_text,
         parsed_resume=parsed_resume,
         skills=skills,

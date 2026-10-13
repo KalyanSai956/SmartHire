@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -18,6 +19,8 @@ from backend.services.llm.usage import (
 logger = logging.getLogger(
     "smarthire.llm.gateway"
 )
+
+_BACKGROUND_TASKS: set = set()
 
 
 class LLMGateway:
@@ -58,18 +61,30 @@ class LLMGateway:
     # ========================================================
 
     async def _record_usage(
-    self,
-    response: LLMResponse,
-) -> None:
+        self,
+        response: LLMResponse,
+    ) -> None:
+        """
+        Usage tracking is best-effort and must never delay the
+        AI response, so it runs as a background task instead of
+        being awaited inline (it is a Supabase write).
+        """
 
-        await record_llm_usage(
-        user_id=self.user_id,
-        usage=response.usage,
-        provider=response.provider,
-        model=response.model,
-        feature=self.feature,
-        usage_source=self.usage_source,
-    )
+        task = asyncio.create_task(
+            record_llm_usage(
+                user_id=self.user_id,
+                usage=response.usage,
+                provider=response.provider,
+                model=response.model,
+                feature=self.feature,
+                usage_source=self.usage_source,
+            )
+        )
+
+        # Keep a strong reference until finished so the task is
+        # not garbage-collected mid-flight.
+        _BACKGROUND_TASKS.add(task)
+        task.add_done_callback(_BACKGROUND_TASKS.discard)
 
     # ========================================================
     # TEXT GENERATION

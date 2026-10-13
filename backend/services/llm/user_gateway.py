@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Optional
 
@@ -188,15 +189,39 @@ async def create_user_llm_gateway(
     # =========================================================
     # AUTOMATIC BYOK SELECTION
     # =========================================================
+    #
+    # SPEED: look up all providers concurrently instead of one
+    # network round-trip per provider, then pick the first usable
+    # one in priority order (same result as before).
+    # =========================================================
 
-    for candidate in DEFAULT_PROVIDER_PRIORITY:
-
-        api_key, credential = (
-            await _get_user_credential(
+    lookups = await asyncio.gather(
+        *(
+            _get_user_credential(
                 user_id=user_id,
                 provider=candidate,
             )
-        )
+            for candidate in DEFAULT_PROVIDER_PRIORITY
+        ),
+        return_exceptions=True,
+    )
+
+    for candidate, outcome in zip(
+        DEFAULT_PROVIDER_PRIORITY,
+        lookups,
+    ):
+
+        if isinstance(outcome, BaseException):
+            logger.warning(
+                "BYOK credential lookup failed. "
+                "provider=%s user_id=%s error=%s",
+                candidate,
+                user_id,
+                outcome,
+            )
+            continue
+
+        api_key, credential = outcome
 
         if not credential:
             continue
